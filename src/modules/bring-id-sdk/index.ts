@@ -9,6 +9,12 @@ class BringIDSDK implements IBringIDSDK {
 
   }: TConstructorArgs) {
 
+    window.setInterval(() => {
+      console.log('PING...')
+      window.postMessage({
+        type: 'PING',
+      })
+    }, 5000)
 
   }
 
