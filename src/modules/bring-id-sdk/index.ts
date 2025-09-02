@@ -50,14 +50,19 @@ class BringIDSDK implements IBringIDSDK {
         switch (event.data.type) {
           //  from client to extension
           case 'RECEIVE_PROOFS': {
-            resolve(event.data.data)
+            resolve({
+              proofs: event.data.data.proofs,
+              points: event.data.data.points
+            })
             window.removeEventListener("message", listener)
             break
           }
 
           case 'PROOFS_REJECTED': {
-            resolve(null)
-            window.removeEventListener("message", listener)
+            resolve({
+              proofs: null,
+              points: 0
+            })
             break
           }
         }

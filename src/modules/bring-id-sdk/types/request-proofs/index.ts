@@ -6,6 +6,9 @@ type TRequestProofsArgs = {
   address: string
 }
 
-type TRequestProofs = (args: TRequestProofsArgs) => Promise<TSemaphoreProof[] | null>
+type TRequestProofs = (args: TRequestProofsArgs) => Promise<{
+  proofs: TSemaphoreProof[] | null
+  points: number
+}>
 
 export default TRequestProofs
