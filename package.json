@@ -15,7 +15,7 @@
     "type": "git",
     "url": "git+https://github.com/bringid/bringid-sdk.git"
   },
-  "license": "MIT",
+  "license": "AGPL3",
   "description": "",
   "bugs": {
     "url": "https://github.com/bringid/bringid-sdk/issues"
