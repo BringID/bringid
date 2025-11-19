@@ -7,7 +7,7 @@ module.exports = {
   output: {
     filename: "index.js",
     path: path.resolve(__dirname, 'dist'),
-    library: "ZKBringSDK",
+    library: "BringSDK",
     libraryTarget: "umd",
     globalObject: "this"
   },
@@ -16,10 +16,15 @@ module.exports = {
     extensions: [".ts", ".tsx", ".js"],
     // Add support for TypeScripts fully qualified ESM imports.
     extensionAlias: {
-     ".js": [".js", ".ts"],
-     ".cjs": [".cjs", ".cts"],
-     ".mjs": [".mjs", ".mts"]
+     ".js": [".js", ".ts", ".tsx"]
+    },
+    alias: {
+      "@": path.resolve(__dirname, "src")
     }
+  },
+  externals: {
+    react: "react",
+    "react-dom": "react-dom"
   },
   module: {
     rules: [

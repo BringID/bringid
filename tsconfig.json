@@ -6,14 +6,21 @@
     "outDir": "dist",
     "module": "commonjs",
     "moduleResolution": "node",
-    "lib": ["es2022", "dom"],
+    "lib": ["es2022", "dom", "esnext"],
     "rootDir": "src",
     "inlineSources": true,
+    "jsx": "react-jsx",
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "declarationMap": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "baseUrl": "src",
+    "types": ["styled-components"],
+    "typeRoots": ["./src/@types"],
+    "paths": {
+      "@/*": ["*"]
+    }
   },
   "include": ["src/**/*"]
 }
