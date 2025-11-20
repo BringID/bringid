@@ -1,29 +1,18 @@
-import IBringIDSDK, {
-  TConstructorArgs,
+import IBringIDExtensionSDK, {
   TIsExtensionInstalled,
   TRequestProofs
 } from './types'
 
-class BringIDSDK implements IBringIDSDK {
-  constructor({
-
-  }: TConstructorArgs) {
-
-  }
-
-
-
+class BringIDExtensionSDK implements IBringIDExtensionSDK {
   isExtensionInstalled: TIsExtensionInstalled = () => {
     return new Promise((resolve, reject) => {
       setTimeout(() => {
         console.log('SDK::', { window })
         const bringId = (window as any).bringID
         resolve(Boolean(bringId))
-
       }, 1500)
     })
   }
-
 
   requestProofs: TRequestProofs = async ({
     drop,
@@ -81,4 +70,4 @@ class BringIDSDK implements IBringIDSDK {
   }
 }
 
-export default BringIDSDK
+export default BringIDExtensionSDK

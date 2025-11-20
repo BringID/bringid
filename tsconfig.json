@@ -16,7 +16,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "baseUrl": "src",
-    "types": ["styled-components"],
+    "types": [],
     "typeRoots": ["./src/@types"],
     "paths": {
       "@/*": ["*"]

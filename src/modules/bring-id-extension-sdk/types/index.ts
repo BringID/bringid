@@ -1,16 +1,14 @@
-import TConstructorArgs from './constructor-args'
 import TIsExtensionInstalled from './is-extension-installed'
 import TRequestProofs from './request-proofs'
 
-interface IBringIDSDK {
+interface IBringIDExtensionSDK {
   isExtensionInstalled: TIsExtensionInstalled
   requestProofs: TRequestProofs
 }
 
 export {
-  TConstructorArgs,
   TIsExtensionInstalled,
   TRequestProofs
 }
 
-export default IBringIDSDK
+export default IBringIDExtensionSDK
