@@ -1,6 +1,9 @@
 import { useEffect } from "react";
 
-function useMessageProxy(iframeRef) {
+function useMessageProxy(
+  iframeRef,
+  connectUrl: string
+) {
   useEffect(() => {
     function onMessage(event: MessageEvent) {
       const fromOrigin = event.origin;
@@ -12,13 +15,13 @@ function useMessageProxy(iframeRef) {
 
         iframeRef.current.contentWindow?.postMessage(
           data,
-          "https://connect.bringid.org"
+          connectUrl
         );
         return;
       }
 
       // From CONNECT iframe → forward to SDK
-      if (fromOrigin === "https://connect.bringid.org") {
+      if (fromOrigin === connectUrl) {
         window.postMessage(data, window.location.origin);
         return;
       }

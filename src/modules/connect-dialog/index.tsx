@@ -16,7 +16,7 @@ const ConnectDialog: FC<TProps> = ({
   connectUrl = 'https://connect.bringid.org'
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  useMessageProxy(iframeRef);
+  useMessageProxy(iframeRef, connectUrl);
 
   const iframeSrc =
     typeof window === "undefined"
