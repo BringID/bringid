@@ -1,8 +1,8 @@
-import TResponseType from "./response-type";
+import TRequestType from "./request-type";
 import TErrorType from "./error-type";
 
 type TRequest = {
-  type: TResponseType
+  type: TRequestType
   requestId: string
   error?: TErrorType
   payload?: any

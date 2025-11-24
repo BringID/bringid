@@ -13,10 +13,17 @@ const ConnectDialog: FC<TProps> = ({
   visible,
   setVisible,
   iframeOnLoad,
+  onLogin,
+  onLogout,
   connectUrl = 'https://connect.bringid.org'
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  useMessageProxy(iframeRef, connectUrl);
+  useMessageProxy(
+    iframeRef,
+    connectUrl,
+    onLogin,
+    onLogout,
+  );
 
   const iframeSrc =
     typeof window === "undefined"

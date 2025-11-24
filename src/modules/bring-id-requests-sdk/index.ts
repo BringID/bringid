@@ -1,5 +1,6 @@
 import { generateId } from "@/utils"
-import { TRequestType, TRequest, TResponse } from "@/types"
+import { TRequestType, TRequest, TResponse, TExtensionStatus, TSemaphoreProof } from "@/types"
+import { TCheckExtensionStatus, TRequestProofs } from "./types" 
 
 export class BringIDRequestsSDK {
   private dialogWindowOrigin = window.location.origin;
@@ -7,7 +8,11 @@ export class BringIDRequestsSDK {
 
   private pendingRequests = new Map<
     string,
-    { resolve: (v: any) => void; reject: (e: any) => void }
+    {
+      resolve: (v: any) => void,
+      reject: (e: any) => void,
+      requestType: TRequestType
+    }
   >();
 
   constructor() {
@@ -24,17 +29,30 @@ export class BringIDRequestsSDK {
     if (!this.connectDialogReady) {
       throw new Error("ConnectDialog is not mounted.");
     }
+
+    console.log('sendMessageToDialog: ', { msg, dialogWindowOrigin: this.dialogWindowOrigin })
     window.postMessage(msg, this.dialogWindowOrigin);
   }
 
   private handleMessage = (event: MessageEvent) => {
+    console.log('handleMessage: ', {
+      event,
+      dialogWindowOrigin: this.dialogWindowOrigin
+    })
     if (event.origin !== this.dialogWindowOrigin) return;
 
     const data: TResponse = event.data;
+
     if (!data.requestId) return;
 
     const pending = this.pendingRequests.get(data.requestId);
+    console.log('handleMessage: ', { pending })
     if (!pending) return;
+
+    // i have pending request, that should not be captured
+
+    console.log({ data, pending })
+    if (pending.requestType === data.type) { return }
 
     this.pendingRequests.delete(data.requestId);
 
@@ -43,11 +61,10 @@ export class BringIDRequestsSDK {
   };
 
   /** Helper to wrap messages as promises */
-  private request(type: TRequestType, payload?: any) {
-    return new Promise((resolve, reject) => {
+  private request<T>(type: TRequestType, payload?: any): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
       const requestId = generateId();
-
-      this.pendingRequests.set(requestId, { resolve, reject });
+      this.pendingRequests.set(requestId, { resolve, reject, requestType: type });
 
       this.sendMessageToDialog({ type, requestId, payload });
     });
@@ -55,16 +72,16 @@ export class BringIDRequestsSDK {
 
   /** PUBLIC METHODS */
 
-  async checkExtensionStatus() {
-    return this.request("CHECK_EXTENSION_STATUS_REQUEST");
+  checkExtensionStatus: TCheckExtensionStatus = async () => {
+    return this.request<{ status: TExtensionStatus }>("CHECK_EXTENSION_STATUS_REQUEST");
   }
 
-  async requestProofs(payload: {
+  requestProofs: TRequestProofs = async (payload: {
     drop: string;
     address: string;
     pointsRequired: number;
-  }) {
-    return this.request("PROOFS_REQUEST", payload);
+  }) => {
+    return this.request<{ proofs: TSemaphoreProof[], points: number }>("PROOFS_REQUEST", payload);
   }
 }
 
