@@ -13,8 +13,7 @@ import {
   Body,
   Footer,
 } from './styled-components';
-import DefaultPluginIcon from '../../assets/img/default-plugin-icon.png';
-import { TNotarizationGroup } from '../../common/types';
+import { TNotarizationGroup } from '@/types';
 
 const defineTiers = (groups?: TNotarizationGroup[]) => {
   if (!groups || groups.length === 1) return null;
@@ -55,7 +54,7 @@ const TaskContainer: FC<TProps> = ({
           />
         )}
         <ImageWrapper>
-          <Icon src={icon || DefaultPluginIcon} />
+          <Icon src={icon} />
         </ImageWrapper>
         <Content>
           <Title>{title}</Title>

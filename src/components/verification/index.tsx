@@ -1,14 +1,14 @@
 import React, { FC, useState, useEffect } from 'react';
 import { TProps } from './types';
 import { Value } from './styled-components';
-import { TVerificationStatus } from '../../common/types';
+import { TVerificationStatus } from '@/types';
 import { TaskContainer } from '../../components';
 import { Icons } from '../../components';
 import { Button } from '../../components';
-import { msToTime, defineExplorerURL } from '../../popup/utils';
+import { msToTime, defineExplorerURL } from '@/utils';
 import { Tag } from '../../components';
-import relayer from '../../relayer';
-import getStorage from '../../db-storage';
+// import relayer from '../../relayer';
+// import getStorage from '../../db-storage';
 import configs from '../../configs';
 import modeConfigs from '../../configs/mode-configs';
 
@@ -74,10 +74,12 @@ const Verification: FC<TProps> = ({
       setExpiration(updatedExpiration);
 
       if (updatedExpiration === 0) {
-        const storage = await getStorage();
-        await storage.updateVerificationStatus(credentialGroupId, 'completed');
+        // const storage = await getStorage();
+        // await storage.updateVerificationStatus(credentialGroupId, 'completed');
 
-        window.clearInterval(interval);
+        // window.clearInterval(interval);
+
+        // update status to completed
       }
     }, 1000);
 
@@ -95,16 +97,16 @@ const Verification: FC<TProps> = ({
       if (!taskId) {
         return alert('taskId not defined');
       }
-      const verification = await relayer.getVerification(taskId);
+      // const verification = await relayer.getVerification(taskId);
 
-      if (verification) {
-        const { txHash } = verification;
-        const configsResult = await modeConfigs()
+      // if (verification) {
+      //   const { txHash } = verification;
+      //   const configsResult = await modeConfigs()
 
-        chrome.tabs.create({
-          url: `${defineExplorerURL(Number(configsResult.CHAIN_ID || '84532'))}/tx/${txHash}`,
-        });
-      }
+      //   chrome.tabs.create({
+      //     url: `${defineExplorerURL(Number(configsResult.CHAIN_ID || '84532'))}/tx/${txHash}`,
+      //   });
+      // }
     },
   );
 

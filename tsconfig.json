@@ -1,6 +1,10 @@
 {
   "compilerOptions": {
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
     "declaration": true,
+    "emitDeclarationOnly": true,
+    "isolatedModules": false,
     "strictNullChecks": true,
     "target": "es2015", 
     "outDir": "dist",
@@ -22,5 +26,6 @@
       "@/*": ["*"]
     }
   },
-  "include": ["src/**/*"]
+  "exclude": ["./dist", "./node_modules"],
+  "include": ["src/**/*", "./global.d.ts"]
 }

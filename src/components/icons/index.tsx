@@ -13,6 +13,7 @@ import AddressIcon from './address';
 import ConnectionIcon from './connection';
 import Copy from './copy';
 import Lock from './lock';
+import CloseIcon from './close-icon';
 
 const Icons = {
   VehicleIcon,
@@ -30,6 +31,7 @@ const Icons = {
   ConnectionIcon,
   Copy,
   Lock,
+  CloseIcon
 };
 
 export default Icons;

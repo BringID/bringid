@@ -1,5 +1,5 @@
 import styled, { css } from 'styled-components';
-import { TVerificationStatus } from '../../common/types';
+import { TVerificationStatus } from '@/types';
 import Checkbox from '../checkbox';
 
 export const Container = styled.div<{
