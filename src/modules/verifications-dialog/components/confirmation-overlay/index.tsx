@@ -123,7 +123,6 @@ const defineButton = (
             onAccept(proofs)
 
             onClose();
-            window.close();
           } catch (err) {
             setLoading(false);
             console.log({ err });

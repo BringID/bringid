@@ -194,3 +194,216 @@ This initializes `postMessage` communication.
 - Browser only — not available in Node.js
 - `sdk.markDialogReady()` must be triggered **after iframe load**
 - Optimized for Chrome
+
+# BringID Modal SDK 0.0.14 – Next.js Integration Guide
+
+This guide explains how to integrate **bringid-sdk** into a **Next.js App Router** application, including modal setup and requesting proofs.
+
+---
+
+## Installation
+
+Install the SDK using Yarn:
+
++++bash
+yarn add bringid-sdk@^0.0.14
++++
+
+---
+
+## Requirements
+
+- Next.js 13+ (App Router)
+- React 18+
+- Client-side wallet integration (e.g. Wagmi, Ethers)
+- App Router enabled (`app/` directory)
+
+---
+
+## Overview
+
+The BringID SDK works by:
+
+1. Rendering a global verification modal
+2. Exposing SDK methods (`openModal`, `requestProofs`)
+3. Allowing interaction from client components
+
+To use it correctly, you must:
+
+- Create a **Modal Provider**
+- Wrap it in your **Root Layout**
+- Call SDK methods from **Client Components only**
+
+---
+
+## 1. Create Modal Provider
+
+Create a client-side provider that renders the verification dialog once.
+
+**`components/ModalProvider.tsx`**
+
+```tsx
+"use client";
+
+import { VerificationsDialog } from "bringid-sdk";
+import React from "react";
+
+type Props = {
+  children: React.ReactNode;
+};
+
+export default function ModalProvider({ children }: Props) {
+  // Replace with actual wallet data (wagmi, ethers, etc.)
+  const address: string | null = null;
+  const signer: any = null;
+
+  return (
+    <>
+      <VerificationsDialog
+        address={address || undefined}
+        generateSignature={
+          signer
+            ? async (value: string) => await signer.signMessage(value)
+            : undefined
+        }
+      />
+      {children}
+    </>
+  );
+}
+```
+
+### Notes
+
+- This component **must** be a Client Component
+- Render `VerificationsDialog` only once in the app
+- `address` and `signer` should come from your wallet provider
+
+---
+
+## 2. Wrap Root Layout
+
+Wrap your app with the modal provider in `RootLayout`.
+
+**`app/layout.tsx`**
+
+```tsx
+import ModalProvider from "@/components/ModalProvider";
+import styles from "./page.module.css";
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <head>
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"
+        />
+      </head>
+      <body className={styles.page}>
+        <WagmiProvider>
+          <ModalProvider>{children}</ModalProvider>
+        </WagmiProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+---
+
+## 3. Using SDK Methods
+
+The SDK exposes the following client-side methods:
+
+- `openModal()` – opens the verification modal
+- `requestProofs(address, chainId)` – requests verification proofs
+
+These methods must be called from **Client Components**.
+
+---
+
+## Example: Open Modal and Request Proofs
+
+**`components/CreateID.tsx`**
+
+```tsx
+"use client";
+
+import { FC, useState } from "react";
+import { openModal, requestProofs } from "bringid-sdk";
+
+type Props = {
+  setStage?: (stage: string) => void;
+};
+
+const CreateID: FC<Props> = ({ setStage }) => {
+  const [proofs, setProofs] = useState<any>(null);
+
+  return (
+    <div>
+      {proofs && (
+        <pre style={{ whiteSpace: "pre-wrap" }}>
+          {JSON.stringify(proofs, null, 2)}
+        </pre>
+      )}
+
+      <button
+        onClick={() => {
+          openModal();
+        }}
+      >
+        Open popup
+      </button>
+
+      <button
+        onClick={async () => {
+          const result = await requestProofs(
+            "0xA5e1149A4AE284cd2651F6672Dfb174c788984bC",
+            10
+          );
+          setProofs(result);
+        }}
+      >
+        Ask proofs
+      </button>
+    </div>
+  );
+};
+
+export default CreateID;
+```
+
+---
+
+## Best Practices
+
+- Always call SDK methods from Client Components
+- Ensure wallet is connected before requesting proofs
+- Avoid rendering the modal multiple times
+- For large proof objects, consider collapsing or lazy rendering
+
+---
+
+## Troubleshooting
+
+### Modal does not open
+
+- Ensure `ModalProvider` is rendered in `layout.tsx`
+- Ensure `'use client'` is present
+
+### Proof request fails
+
+- Wallet must be connected
+- Address must match signer
+- Chain ID must be supported
+
+---
+
+## License
+
+Refer to the BringID SDK license and documentation for details.

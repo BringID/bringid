@@ -73,7 +73,7 @@ export default function user(state = initState, action: Action<any>): State {
       return action.payload;
 
     case ActionType['/user/destroy']:
-      return state
+      return initState
 
     case ActionType['/user/setId']:
       return { ...state, id: action.payload };

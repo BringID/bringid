@@ -1,6 +1,6 @@
 {
   "name": "bringid-sdk",
-  "version": "0.0.12",
+  "version": "0.0.15",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
