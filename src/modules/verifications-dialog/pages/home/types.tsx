@@ -1,5 +1,6 @@
 import { TGenerateSignature } from "@/types"
 
 export type TProps = {
-  generateSignature?: TGenerateSignature
+  generateSignature?: TGenerateSignature,
+  setPage: (page: string) => void
 }

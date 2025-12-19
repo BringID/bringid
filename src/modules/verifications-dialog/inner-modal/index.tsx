@@ -1,19 +1,86 @@
 'use client'
-import { FC, useEffect } from 'react'
+import { FC, useEffect, useState } from 'react'
 import {
   DialogStyled,
   Container,
   DialogWindowClassName
 } from './styled-components'
 import { TProps } from './types'
-import { Navigate, Route, Routes } from 'react-router';
-import { HashRouter } from 'react-router-dom';
 import { Home, Tasks } from '../pages'
-// import WagmiProvider from './wagmi-provider'
 import { useDispatch } from 'react-redux'
-import { registerOpenModal } from '../events/event-bus';
-import { useModal } from '../store/reducers/modal';
-import { setAddress, setApiKey } from '../store/reducers/user';
+import {
+  registerOpenModal,
+  registerRequestProofs
+} from '../events/event-bus';
+import { setLoading, useModal } from '../store/reducers/modal';
+import { setAddress, setApiKey, useUser } from '../store/reducers/user';
+import { TGenerateSignature, TVerification, TVerificationStatus } from '@/types';
+import semaphore from '../semaphore';
+import { Task, tasks } from '@/core';
+import {
+  addVerification,
+  addVerifications,
+  useVerifications
+} from '../store/reducers/verifications';
+import { ConfirmationOverlay, LoadingOverlay } from '../components'
+import { registerRequest, openRequest, useRequestProofs } from '../store/reducers/request-proofs'
+import { calculateAvailablePoints } from '@/utils'
+
+
+let resolveRequest: ((value: any) => void) | null = null;
+let rejectRequest: ((reason?: any) => void) | null = null;
+
+const defineContent = (
+  page: string,
+  setPage: (page: string) => void,
+  generateSignature?: TGenerateSignature
+) => {
+  switch (page) {
+    case 'home': return <Home setPage={setPage} generateSignature={generateSignature} />
+    case 'tasks': return <Tasks setPage={setPage} />
+    default: return <Home setPage={setPage} generateSignature={generateSignature} />
+  }
+}
+
+const uploadPrevVerifications = async (
+  tasks: Task[],
+  userKey: string,
+  setLoading: (
+    loading: boolean
+  ) => void,
+  addVerification: (verification: TVerification) => void
+) => {
+  setLoading(true)
+  for (const task of tasks) {
+    for (const group of task.groups) {
+      const identity = semaphore.createIdentity(
+        String(userKey),
+        group.credentialGroupId,
+      );
+      const { commitment } = identity;
+
+      try {
+        const proof = await semaphore.getProof(
+          String(commitment),
+          group.semaphoreGroupId,
+        );
+        if (proof) {
+          const newTask = {
+            credentialGroupId: group.credentialGroupId,
+            status: 'completed' as TVerificationStatus,
+            scheduledTime: +new Date(),
+            fetched: true,
+            taskId: task.id,
+          }
+          addVerification(newTask)
+        }
+      } catch (err) {
+        console.log(`proof for ${commitment} was not added before`);
+      }
+    }
+  }
+  setLoading(false)
+}
 
 const InnerModal: FC<TProps> = ({
   apiKey,
@@ -23,20 +90,113 @@ const InnerModal: FC<TProps> = ({
 
   const dispatch = useDispatch()
 
-  const { isOpen } = useModal()
+  const { isOpen, loading } = useModal()
+
+  const {
+    isOpen: requestIsOpen,
+    pointsRequired,
+    dropAddress
+  } = useRequestProofs()
+
+  const user = useUser()
+  const { verifications } = useVerifications()
 
   useEffect(() => {
     registerOpenModal(() => {
+      setPage('home');
+      dispatch(openRequest(false));
       dispatch({ type: '/modal/setIsOpen', payload: true });
     });
-  }, []);
+
+    registerRequestProofs(async (dropAddress, pointsRequired) => {
+      if (!user.key) {
+        return alert('User key is not ready. Please sign in to BringID widget first')
+      }
+      dispatch(registerRequest(pointsRequired, dropAddress));
+      dispatch(openRequest(true));
+      dispatch({ type: '/modal/setIsOpen', payload: true });
+
+      return new Promise((resolve, reject) => {
+        resolveRequest = resolve;
+        rejectRequest = reject;
+      });
+    });
+
+    return () => {
+      resolveRequest = null;
+      rejectRequest = null;
+    };
+  }, [
+    user.key
+  ]);
+
+
+  useEffect(() => {
+    if (!verifications) { return }
+
+    const interval = setInterval(async () => {
+      try {
+        const notCompletedVerifications = verifications.filter(
+          (verification) => verification.status !== 'completed',
+        );
+        if (notCompletedVerifications.length === 0) {
+          return;
+        }
+
+        let updated = false
+
+        const verificationsUpdated = verifications.map(item => {
+          if (item.status !== 'completed') {
+            const now = +new Date();
+            const expiration = item.scheduledTime - now;
+            if (expiration <= 0) {
+              updated = true
+              return {
+                ...item,
+                status: 'completed' as TVerificationStatus
+              }
+            }
+          }
+          return item
+        })
+        console.log({ verificationsUpdated })
+        if (updated) dispatch(addVerifications(verificationsUpdated))
+
+      } catch (err) {
+        console.log({ err });
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [verifications]);
+
+  const availableTasks = tasks(true)
+
+  const [ page, setPage ] = useState('home')
 
   useEffect(() => {
     if (address) dispatch(setAddress(address));
     if (apiKey) dispatch(setApiKey(apiKey));
-  }, [ apiKey, address ]);
+  }, [
+    apiKey,
+    address
+  ]);
 
-  console.log({ isOpen })
+  useEffect(() => {
+    if (!user.key) return
+
+    uploadPrevVerifications(
+      availableTasks,
+      user.key,
+      (loading: boolean) => dispatch(setLoading(loading)),
+      (verification) => dispatch(addVerification(verification))
+    )
+
+  }, [
+    user.key
+  ]);
+
+  const availablePoints = calculateAvailablePoints(verifications, true)
 
   // return <WagmiProvider>
     return <Container>
@@ -45,15 +205,28 @@ const InnerModal: FC<TProps> = ({
         visible={isOpen}
         onClose={() => dispatch({ type: '/modal/setIsOpen', payload: false })}
       >
-        <HashRouter>
-          <Routes>
-            <Route path="/" element={<Home
-              generateSignature={generateSignature}
-            />} />
-            <Route path="/tasks" element={<Tasks />} />
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-        </HashRouter>
+        {requestIsOpen && pointsRequired && dropAddress && <ConfirmationOverlay
+          pointsRequired={pointsRequired}
+          dropAddress={dropAddress}
+          points={availablePoints}
+          onClose={() => {
+            rejectRequest?.('User cancelled');
+            rejectRequest = null;
+            dispatch(openRequest(false));
+            dispatch(openRequest(false))
+          }}
+          onAccept={(proofs) => {
+            resolveRequest?.(proofs);
+            resolveRequest = null;
+            dispatch(openRequest(false));
+          }}
+        />}
+        {loading && <LoadingOverlay title="Loading..."/>}
+        {defineContent(
+          page,
+          setPage,
+          generateSignature
+        )}
       </DialogStyled>
     </Container>
 }

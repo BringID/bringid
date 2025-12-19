@@ -14,16 +14,16 @@ import {
   VerificationsSelectListStyled,
 } from './styled-components';
 import TProps from './types';
-import { useVerifications } from '../../store/reducers/verifications';
+import verifications, { useVerifications } from '../../store/reducers/verifications';
 import {
   defineTaskByCredentialGroupId,
 } from '@/utils';
-import { TVerification } from '@/types';
+import { TSemaphoreProof, TVerification } from '@/types';
 import { Tag } from '@/components';
 import BringGif from '../../images/bring.gif';
-
-import { tasks } from '../../../../core';
+import { tasks } from '@/core';
 import { useUser } from '../../store/reducers/user';
+import { prepareProofs } from '../../utils';
 
 const defineIfButtonIsDisabled = (
   pointsRequired: number,
@@ -83,6 +83,8 @@ const showInsufficientPointsMessage = (
 };
 
 const defineButton = (
+  userKey: string | null,
+  verifications: TVerification[],
   isEnoughPoints: boolean,
   pointsRequired: number,
   pointsSelected: number,
@@ -91,6 +93,9 @@ const defineButton = (
   setLoading: (loading: boolean) => void,
   selected: string[],
   onClose: () => void,
+  onAccept: (
+    proofs: TSemaphoreProof[]
+  ) => void
 ) => {
   if (isEnoughPoints) {
     return (
@@ -102,13 +107,20 @@ const defineButton = (
         onClick={async () => {
           setLoading(true);
           try {
-            // const proofs = await manager.getProofs(
-            //   dropAddress,
-            //   pointsSelected,
-            //   selected,
-            // );
 
-            alert('SEND PROOFS')
+            if (!userKey) {
+              alert('USER HAS NO KEY')
+              throw new Error('USER HAS NO KEY')
+            }
+            const proofs = await prepareProofs(
+              userKey,
+              verifications,
+              dropAddress,
+              pointsSelected,
+              selected,
+            );
+
+            onAccept(proofs)
 
             onClose();
             window.close();
@@ -135,13 +147,13 @@ const ConfirmationOverlay: FC<TProps> = ({
   onClose,
   dropAddress,
   pointsRequired, // points required
-  host,
   points, // all points available
+  onAccept
 }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const isEnoughPoints = points >= pointsRequired;
   const user = useUser()
-  const availableTasks = tasks(false); // devmode
+  const availableTasks = tasks(true); // devmode
   const verificationsState = useVerifications();
   const [selected, setSelected] = useState<string[]>([]);
 
@@ -151,7 +163,7 @@ const ConfirmationOverlay: FC<TProps> = ({
     verificationsState.verifications.forEach((verification) => {
       const relatedTask = defineTaskByCredentialGroupId(
         verification.credentialGroupId,
-        false // devmode
+        true // devmode
       );
 
       if (!relatedTask) {
@@ -205,7 +217,7 @@ const ConfirmationOverlay: FC<TProps> = ({
         {isEnoughPoints && (
           <VerificationsSelectListStyled
             tasks={availableTasks}
-            devMode={false}
+            devMode={true}
             // devmode
             verifications={verificationsState.verifications}
             selected={selected}
@@ -222,6 +234,8 @@ const ConfirmationOverlay: FC<TProps> = ({
         )}
         <ButtonsContainer>
           {defineButton(
+            user.key,
+            verificationsState.verifications,
             isEnoughPoints,
             pointsRequired,
             pointsSelected,
@@ -230,6 +244,7 @@ const ConfirmationOverlay: FC<TProps> = ({
             setLoading,
             selected,
             onClose,
+            onAccept
           )}
 
           <ButtonStyled

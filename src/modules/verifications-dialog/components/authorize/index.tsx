@@ -11,14 +11,20 @@ const Authorize: FC<TProps> = ({ className, generateSignature }) => {
     <Container className={className}>
       <Title>Connect your wallet to start verifying</Title>
 
-      {generateSignature && <ButtonsStyled
+      <ButtonsStyled
         onClick={async() => {
-          const sig = await generateSignature('Hello world')
+          if (!generateSignature) {
+            alert('generateSignature method is not passed')
+            return
+          }
+          const sig = await generateSignature(`Sign to derive your BringID key.
+Recoverable by re-signing with the same wallet.`)
+          console.log({ sig })
           dispatch(setKey(sig))
         }}
       >
-        GENERATE SIGNATURE  
-      </ButtonsStyled>}
+        Create BringID key
+      </ButtonsStyled>
     </Container>
   );
 };

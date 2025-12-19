@@ -1,4 +1,16 @@
-[ 
-  
+[
+  {
+    "title": "GitHub",
+    "id": "1",
+    "service": "GitHub",
+    "description": "Authorize you GitHub account",
+    "icon": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/GitHub_Invertocat_Logo.svg/2560px-GitHub_Invertocat_Logo.svg.png",
+    "groups": [
+      {
+        "points": 10,
+        "semaphoreGroupId": "110",
+        "credentialGroupId": "6"
+      }
+    ]
+  }
 ]
-

@@ -12,11 +12,22 @@ import {
 import TProps from './types';
 import { shortenString } from '@/utils';
 import AddressIcon from '@/components/icons/address';
+import { addVerifications } from '../../store/reducers/verifications';
+import { destroy } from '../../store/reducers/user';
+import { useDispatch } from 'react-redux';
 
-const defineContent = (address: string | null, points: number) => {
-  if (!address) {
-    return <TitleStyled>BringID</TitleStyled>;
+const defineContent = (
+  address: string | null,
+  points: number,
+  userKey: string | null
+) => {
+
+  const dispatch = useDispatch()
+
+  if (!address || !userKey) {
+    return <TitleStyled>BringID</TitleStyled>
   }
+
 
   return (
     <Content>
@@ -28,8 +39,8 @@ const defineContent = (address: string | null, points: number) => {
       </Texts>
       <ButtonStyled
         onClick={async () => {
-
-          
+          dispatch(addVerifications([]))
+          dispatch(destroy())
         }}
       >
         Logout
@@ -38,8 +49,16 @@ const defineContent = (address: string | null, points: number) => {
   );
 };
 
-const HeaderComponent: FC<TProps> = ({ points, address }) => {
-  return <Header>{defineContent(address, points)}</Header>;
+const HeaderComponent: FC<TProps> = ({
+  points,
+  address,
+  userKey
+}) => {
+  return <Header>{defineContent(
+    address,
+    points,
+    userKey
+  )}</Header>;
 };
 
 export default HeaderComponent;

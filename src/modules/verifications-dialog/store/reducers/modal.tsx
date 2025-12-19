@@ -4,7 +4,8 @@ import { useSelector } from 'react-redux';
 import deepEqual from 'fast-deep-equal';
 
 enum ActionType {
-  '/modal/setIsOpen' = '/modal/setIsOpen'
+  '/modal/setIsOpen' = '/modal/setIsOpen',
+  '/modal/setLoading' = '/modal/setLoading'
 }
 
 type Action<payload> = {
@@ -14,11 +15,13 @@ type Action<payload> = {
 };
 
 type State = {
-  isOpen: boolean
+  isOpen: boolean,
+  loading: boolean
 };
 
 const initState: State = {
-  isOpen: false
+  isOpen: false,
+  loading: false
 };
 
 export const setIsOpen = (isOpen: boolean): Action<boolean> => ({
@@ -26,10 +29,17 @@ export const setIsOpen = (isOpen: boolean): Action<boolean> => ({
   payload: isOpen,
 });
 
+export const setLoading = (loading: boolean): Action<boolean> => ({
+  type: ActionType['/modal/setLoading'],
+  payload: loading,
+});
+
 export default function modal(state = initState, action: Action<any>): State {
   switch (action.type) {
     case ActionType['/modal/setIsOpen']:
       return { ...state, isOpen: action.payload };
+    case ActionType['/modal/setLoading']:
+      return { ...state, loading: action.payload };
     default:
       return state;
   }

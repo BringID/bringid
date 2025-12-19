@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Container,
   TitleStyled,
@@ -10,24 +9,26 @@ import {
   TextStyled,
   LinkStyled,
 } from './styled-components';
-import { useNavigate } from 'react-router';
+import { FC } from 'react';
 import { tasks } from '../../../../core/task';
 import { TasksList } from '../../components';
 import { useVerifications } from '../../store/reducers/verifications';
 import { useUser } from '../../store/reducers/user';
 import configs from '../../../../configs';
+import { TProps } from './types'
 
-const Tasks = () => {
-  const navigate = useNavigate();
+const Tasks: FC<TProps> = ({
+  setPage
+}) => {
   const user = useUser()
 
-  const availableTasks = tasks(false); // devmode
+  const availableTasks = tasks(true); // devmode
   const { verifications } = useVerifications();
 
   return (
     <Container>
       <Header>
-        <ArrowBackIconStyled onClick={() => navigate('/')} />
+        <ArrowBackIconStyled onClick={() => setPage('home')} />
         <HeaderContent>
           <TitleStyled>Add Verifications</TitleStyled>
           <SubtitleStyled>Connect accounts to build your score</SubtitleStyled>

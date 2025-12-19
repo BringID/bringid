@@ -1,13 +1,11 @@
 'use client'
 
-import { FC, useState, useEffect } from 'react';
+import { FC } from 'react';
 import { Container, VerificationsListStyled } from './styled-components';
 import { Header } from '../../components';
-import { useNavigate } from 'react-router';
 import { useVerifications } from '../../store/reducers/verifications';
 import { Task, tasks } from '../../../../core/task';
 import {
-  ConfirmationOverlay,
   LoadingOverlay,
   Authorize,
 } from '../../components';
@@ -21,7 +19,7 @@ const renderContent = (
   availableTasks: Task[],
   verifications: TVerification[],
   devMode: boolean,
-  navigate: (location: string) => void,
+  setPage: (page: string) => void,
   generateSignature?: (msg: string) => Promise<string>
 ) => {
   if (!userKey) {
@@ -36,59 +34,36 @@ const renderContent = (
       devMode={devMode}
       verifications={verifications}
       onAddVerifications={() => {
-        navigate('/tasks');
+        setPage('tasks');
       }}
     />
   );
 };
 
 const Home: FC<TProps> = ({
-  generateSignature
+  generateSignature,
+  setPage
 }) => {
   const verificationsStore = useVerifications();
   const { verifications, loading } = verificationsStore;
   const user = useUser();
 
-  const availableTasks = tasks(false); //devMode
 
-  const [confirmationOverlayShow, setConfirmationOverlayShow] =
-    useState<boolean>(false);
-  const [requestHost, setRequestHost] = useState<string>('');
-  const [pointsRequired, setPointsRequired] = useState<string>('');
-  const [dropAddress, setDropAddress] = useState<string>('');
+  const availableTasks = tasks(true); //devMode
 
-  const availablePoints = calculateAvailablePoints(verifications, false); //devMode
 
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    // CHECK IF PROOFS REQUEST CALLED
-  }, []);
-
-  const onRequestClose = () => {
-    setDropAddress('');
-    setPointsRequired('');
-    setRequestHost('');
-    setConfirmationOverlayShow(false);
-  };
+  const availablePoints = calculateAvailablePoints(verifications, true); //devMode
 
   return (
     <Container>
       {loading && <LoadingOverlay title="Processing verification..." />}
-      {confirmationOverlayShow && (
-        <ConfirmationOverlay
-          onClose={() => {
-            onRequestClose();
-          }}
-          host={requestHost}
-          points={availablePoints}
-          pointsRequired={Number(pointsRequired)}
-          dropAddress={dropAddress}
-        />
-      )}
-      <Header points={availablePoints} address={user.address} />
+      <Header
+        points={availablePoints}
+        address={user.address}
+        userKey={user.key}
+      />
 
-      {renderContent(user.key, availableTasks, verifications, false, navigate, generateSignature)} 
+      {renderContent(user.key, availableTasks, verifications, true, setPage, generateSignature)} 
       {/* devMode is false */}
     </Container>
   );

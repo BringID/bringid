@@ -1,16 +1,38 @@
-type Callback = () => void;
+type OpenModalCallback = () => void;
 
-let openModalCallback: Callback | null = null;
+type RequestProofsCallback = (
+  dropAddress: string,
+  pointsRequired: number
+) => Promise<any>;
 
-export const registerOpenModal = (cb: Callback) => {
+let openModalCallback: OpenModalCallback | null = null;
+let requestProofsCallback: RequestProofsCallback | null = null;
 
-  console.log('registered', cb)
+
+export const registerOpenModal = (cb: OpenModalCallback) => {
   openModalCallback = cb;
 };
 
+export const registerRequestProofs = (cb: RequestProofsCallback) => {
+  requestProofsCallback = cb;
+};
+
 export const triggerOpenModal = () => {
-  console.log(openModalCallback)
   if (openModalCallback) openModalCallback();
 };
 
+export const triggerRequest = (
+  dropAddress: string,
+  pointsRequired: number
+) => {
+  if (!requestProofsCallback) {
+    return Promise.reject('requestProofs is not registered');
+  }
+  if (requestProofsCallback) return requestProofsCallback(
+    dropAddress,
+    pointsRequired
+  );
+};
+
 export { triggerOpenModal as openModal };
+export { triggerRequest as requestProofs };

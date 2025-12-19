@@ -13,11 +13,11 @@ import styled from 'styled-components';
 export const Container = styled.div`
   padding: 12px;
   height: 100%;
-  position: fixed;
+  position: absolute;
   width: 100%;
   height: 100%;
   top: 0;
-  z-index: 1;
+  z-index: 10;
   left: 0;
   background-color: ${(props) => props.theme.backgroundColor};
 `;
@@ -106,4 +106,5 @@ export const UserStatus = styled.span`
 
 export const VerificationsSelectListStyled = styled(VerificationsSelectList)`
   margin-bottom: 16px;
+  width: 100%;
 `;

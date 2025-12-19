@@ -4,7 +4,7 @@ const theme = {
   secondaryBackgroundColor: 'rgb(250, 250, 250)',
   mobileBreakpoint: '600px',
   primaryBorderColor: 'rgb(229, 231, 235)',
-  secondaryBorderColor: '#2C2C2F',
+  secondaryBorderColor: 'rgb(229, 231, 235)',
   widgetBackgroundColor: '#FFF',
   backgroundColor: 'rgb(255, 255, 255)',
   secondaryTextColor: 'rgb(115, 115, 115)',

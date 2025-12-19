@@ -1,5 +1,6 @@
 const path = require('path')
 const webpack = require('webpack');
+require('dotenv').config();
 
 module.exports = {
   mode: "production",
@@ -37,8 +38,10 @@ module.exports = {
     new webpack.IgnorePlugin({
       resourceRegExp: /^@react-native-async-storage\/async-storage$/,
     }),
+    new webpack.DefinePlugin({
+      'process.env.ZUPLO_API_KEY': JSON.stringify(process.env.ZUPLO_API_KEY),
+    })
   ],
-
   module: {
     rules: [
       {
