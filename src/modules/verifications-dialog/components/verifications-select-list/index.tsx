@@ -38,6 +38,7 @@ const VerificationsSelectList: FC<TProps> = ({
               scheduledTime={verification.scheduledTime}
               status="default"
               fetched={verification.fetched}
+              icon={relatedTaskData.icon}
               selectable={true}
               selected={isSelected}
               credentialGroupId={verification.credentialGroupId}

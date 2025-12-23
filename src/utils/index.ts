@@ -15,6 +15,7 @@ import msToTime from './ms-to-time';
 import defineExplorerURL from './define-explorer-url';
 import areArraysEqual from './are-arrays-equal';
 import areObjectsEqual from './are-objects-equal';
+import defineInitialSelectedVerifications from './define-initial-selected-verifications';
 
 export {
   generateId,
@@ -34,4 +35,5 @@ export {
   defineZuploNetworkName,
   defineRelatedVerification,
   calculateAvailablePoints,
+  defineInitialSelectedVerifications
 }

@@ -2,7 +2,7 @@ import { TSemaphoreProof } from "@/types";
 
 type TProps = {
   pointsRequired: number;
-  dropAddress: string;
+  scope: string | null;
   onClose: () => void;
   points: number;
   onAccept: (

@@ -7,5 +7,5 @@ export type TProps = {
   status: TVerificationStatus;
   groups: TTaskGroup[];
   id: string;
-  userKey: string;
+  userKey: string | null;
 };

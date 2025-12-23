@@ -25,6 +25,7 @@ const TasksList: FC<TProps> = ({ tasks, className, verifications }) => {
             description={task.description}
             groups={task.groups}
             id={task.id}
+            icon={task.icon}
             userKey={user.key as string}
           />
         );

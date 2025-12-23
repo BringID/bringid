@@ -14,7 +14,7 @@ import {
   VerificationsSelectListStyled,
 } from './styled-components';
 import TProps from './types';
-import verifications, { useVerifications } from '../../store/reducers/verifications';
+import { useVerifications } from '../../store/reducers/verifications';
 import {
   defineTaskByCredentialGroupId,
 } from '@/utils';
@@ -24,6 +24,7 @@ import BringGif from '../../images/bring.gif';
 import { tasks } from '@/core';
 import { useUser } from '../../store/reducers/user';
 import { prepareProofs } from '../../utils';
+import { defineInitialSelectedVerifications } from '@/utils';
 
 const defineIfButtonIsDisabled = (
   pointsRequired: number,
@@ -57,18 +58,6 @@ const showInsufficientPointsNote = (
   );
 };
 
-const defineInitialVerifications = (verifications: TVerification[]) => {
-  const verificationsCompleted = verifications.reduce<string[]>((res, item) => {
-    if (item.status === 'completed') {
-      return [...res, item.credentialGroupId];
-    }
-
-    return res;
-  }, []);
-
-  return verificationsCompleted;
-};
-
 const showInsufficientPointsMessage = (
   isEnoughPoints: boolean,
   pointsRequired: number,
@@ -88,7 +77,7 @@ const defineButton = (
   isEnoughPoints: boolean,
   pointsRequired: number,
   pointsSelected: number,
-  dropAddress: string,
+  scope: string | null,
   loading: boolean,
   setLoading: (loading: boolean) => void,
   selected: string[],
@@ -115,7 +104,7 @@ const defineButton = (
             const proofs = await prepareProofs(
               userKey,
               verifications,
-              dropAddress,
+              scope,
               pointsSelected,
               selected,
             );
@@ -144,7 +133,7 @@ const defineButton = (
 
 const ConfirmationOverlay: FC<TProps> = ({
   onClose,
-  dropAddress,
+  scope,
   pointsRequired, // points required
   points, // all points available
   onAccept
@@ -189,7 +178,7 @@ const ConfirmationOverlay: FC<TProps> = ({
       return;
     }
 
-    setSelected(defineInitialVerifications(verificationsState.verifications));
+    setSelected(defineInitialSelectedVerifications(verificationsState.verifications));
   }, [verificationsState.verifications]);
 
   return (
@@ -238,7 +227,7 @@ const ConfirmationOverlay: FC<TProps> = ({
             isEnoughPoints,
             pointsRequired,
             pointsSelected,
-            dropAddress,
+            scope,
             loading,
             setLoading,
             selected,

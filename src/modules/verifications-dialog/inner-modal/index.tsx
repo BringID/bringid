@@ -6,13 +6,13 @@ import {
   DialogWindowClassName
 } from './styled-components'
 import { TProps } from './types'
-import { Home, Tasks } from '../pages'
+import { Home, Proofs } from '../pages'
 import { useDispatch } from 'react-redux'
 import {
   registerOpenModal,
   registerRequestProofs
 } from '../events/event-bus';
-import { setLoading, useModal } from '../store/reducers/modal';
+import { setIsOpen, setLoading, useModal } from '../store/reducers/modal';
 import { setAddress, setApiKey, useUser } from '../store/reducers/user';
 import { TGenerateSignature, TVerification, TVerificationStatus } from '@/types';
 import semaphore from '../semaphore';
@@ -23,8 +23,9 @@ import {
   useVerifications
 } from '../store/reducers/verifications';
 import { ConfirmationOverlay, LoadingOverlay } from '../components'
-import { registerRequest, openRequest, useRequestProofs } from '../store/reducers/request-proofs'
+import { registerRequest, openRequest, useRequestProofs, setScope } from '../store/reducers/request-proofs'
 import { calculateAvailablePoints } from '@/utils'
+import { setProofsGeneratedCallback, callProofsGeneratedCallback } from '../callbacks'
 
 
 let resolveRequest: ((value: any) => void) | null = null;
@@ -33,11 +34,32 @@ let rejectRequest: ((reason?: any) => void) | null = null;
 const defineContent = (
   page: string,
   setPage: (page: string) => void,
-  generateSignature?: TGenerateSignature
+  closeModal: () => void,
+  generateSignature?: TGenerateSignature,
+
 ) => {
   switch (page) {
-    case 'home': return <Home setPage={setPage} generateSignature={generateSignature} />
-    case 'tasks': return <Tasks setPage={setPage} />
+    case 'home': return <Home
+      setPage={setPage}
+      generateSignature={generateSignature}
+    />
+    case 'proofs': return <Proofs
+      onCancel={() => {
+        setPage('home')
+        closeModal()
+      }}
+      onConfirm={(proofs, pointsSelected) => {
+        if (!callProofsGeneratedCallback) {
+          return alert('proofsGeneratedCallback not passed')
+        }
+
+        callProofsGeneratedCallback(
+          proofs,
+          pointsSelected
+        )
+      }}
+    />
+
     default: return <Home setPage={setPage} generateSignature={generateSignature} />
   }
 }
@@ -95,27 +117,33 @@ const InnerModal: FC<TProps> = ({
   const {
     isOpen: requestIsOpen,
     pointsRequired,
-    dropAddress
+    scope
   } = useRequestProofs()
 
   const user = useUser()
   const { verifications } = useVerifications()
 
   useEffect(() => {
-    registerOpenModal(() => {
+    registerOpenModal((
+      args
+    ) => {
       setPage('home');
       dispatch(openRequest(false));
-      dispatch({ type: '/modal/setIsOpen', payload: true });
+      dispatch(setIsOpen(true))
+      dispatch(setScope(args.scope || null))
+      setProofsGeneratedCallback(args.proofsGeneratedCallback)
     });
 
-    registerRequestProofs(async (dropAddress, pointsRequired) => {
+    registerRequestProofs(async ({ pointsRequired, scope }) => {
       if (!user.key) {
         return alert('User key is not ready. Please sign in to BringID widget first')
       }
-      dispatch(registerRequest(pointsRequired, dropAddress));
-      dispatch(openRequest(true));
-      dispatch({ type: '/modal/setIsOpen', payload: true });
+      dispatch(registerRequest(pointsRequired))
+      dispatch(openRequest(true))
+      dispatch(setIsOpen(true))
 
+      dispatch(setScope(scope || null))
+    
       return new Promise((resolve, reject) => {
         resolveRequest = resolve;
         rejectRequest = reject;
@@ -203,28 +231,31 @@ const InnerModal: FC<TProps> = ({
       <DialogStyled
         dialogClassName={DialogWindowClassName}
         visible={isOpen}
-        onClose={() => dispatch({ type: '/modal/setIsOpen', payload: false })}
+        onClose={() => dispatch(setIsOpen(false))}
       >
-        {requestIsOpen && pointsRequired && dropAddress && <ConfirmationOverlay
+        {requestIsOpen && pointsRequired && <ConfirmationOverlay
           pointsRequired={pointsRequired}
-          dropAddress={dropAddress}
+          scope={scope}
           points={availablePoints}
           onClose={() => {
             rejectRequest?.('User cancelled');
             rejectRequest = null;
             dispatch(openRequest(false));
-            dispatch(openRequest(false))
           }}
           onAccept={(proofs) => {
             resolveRequest?.(proofs);
             resolveRequest = null;
             dispatch(openRequest(false));
+            dispatch(setIsOpen(false))
           }}
         />}
         {loading && <LoadingOverlay title="Loading..."/>}
         {defineContent(
           page,
           setPage,
+          () => {
+            dispatch(setIsOpen(false))
+          },
           generateSignature
         )}
       </DialogStyled>

@@ -1,15 +1,28 @@
 [
   {
-    "title": "GitHub",
+    "title": "GitHub OAuth",
     "id": "1",
     "service": "GitHub",
     "description": "Authorize you GitHub account",
-    "icon": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/GitHub_Invertocat_Logo.svg/2560px-GitHub_Invertocat_Logo.svg.png",
+    "icon": "https://images.seeklogo.com/logo-png/30/1/github-logo-png_seeklogo-304612.png",
     "groups": [
       {
         "points": 10,
         "semaphoreGroupId": "110",
         "credentialGroupId": "6"
+      }
+    ]
+  }, {
+    "title": "X (Twitter) OAuth",
+    "id": "2",
+    "service": "X (Twitter)",
+    "description": "Authorize you X (Twitter) account",
+    "icon": "https://upload.wikimedia.org/wikipedia/commons/c/ce/X_logo_2023.svg",
+    "groups": [
+      {
+        "points": 10,
+        "semaphoreGroupId": "111",
+        "credentialGroupId": "7"
       }
     ]
   }

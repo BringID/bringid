@@ -5,7 +5,8 @@ import { useSelector } from 'react-redux';
 enum ActionType {
   '/requestProofs/registerRequest' = '/requestProofs/registerRequest',
   '/requestProofs/showRequest' = '/requestProofs/showRequest',
-  '/requestProofs/resetRequest' = '/requestProofs/resetRequest'
+  '/requestProofs/resetRequest' = '/requestProofs/resetRequest',
+  '/requestProofs/setScope' = '/requestProofs/setScope'
 }
 
 type Action<payload> = {
@@ -16,33 +17,32 @@ type Action<payload> = {
 
 type State = {
   pointsRequired: number | null
-  dropAddress: string | null
   isOpen: boolean
+  scope: string | null
 };
 
 const initState: State = {
   pointsRequired: null,
-  dropAddress: null,
-  isOpen: false
+  isOpen: false,
+  scope: null
 };
 
 export const registerRequest = (
-  pointsRequired: number,
-  dropAddress: string,
-): Action<{
-  pointsRequired: number,
-  dropAddress: string,
-}> => ({
+  pointsRequired: number
+): Action<number> => ({
   type: ActionType['/requestProofs/registerRequest'],
-  payload: {
-    pointsRequired,
-    dropAddress,
-  }
+  payload: pointsRequired
 });
 
 export const openRequest = (isOpen: boolean): Action<boolean> => ({
   type: ActionType['/requestProofs/showRequest'],
   payload: isOpen,
+});
+
+
+export const setScope = (scope: string | null): Action<string | null> => ({
+  type: ActionType['/requestProofs/setScope'],
+  payload: scope,
 });
 
 export const resetRequest = () => ({
@@ -57,8 +57,7 @@ export default function requestProofs(
     case ActionType['/requestProofs/registerRequest']: {
       return {
         ...state,
-        pointsRequired: action.payload.pointsRequired,
-        dropAddress: action.payload.dropAddress,
+        pointsRequired: action.payload
       };
     }
 
@@ -67,6 +66,13 @@ export default function requestProofs(
       return {
         ...state,
         isOpen: action.payload
+      };
+    }
+
+    case ActionType['/requestProofs/setScope']: {
+      return {
+        ...state,
+        scope: action.payload
       };
     }
 

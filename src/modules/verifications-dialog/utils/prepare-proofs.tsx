@@ -2,11 +2,13 @@ import { TSemaphoreProof, TVerification } from "@/types";
 import { defineTaskByCredentialGroupId, calculateScope } from "@/utils";
 import semaphore from "../semaphore";
 import { generateProof } from '@semaphore-protocol/core';
+import configs from "@/configs";
+import getConfigs from "@/configs/mode-configs";
 
 type TGetProofs = (
   userKey: string,
   verifications: TVerification[],
-  dropAddress: string,
+  scope: string | null,
   pointsRequired: number,
   selectedVerifications: string[],
 ) => Promise<TSemaphoreProof[]>;
@@ -14,7 +16,7 @@ type TGetProofs = (
 const prepareProofs: TGetProofs = async (
   userKey,
   verifications,
-  dropAddress,
+  scope,
   pointsRequired,
   selectedVerifications,
 ) => {
@@ -65,10 +67,10 @@ const prepareProofs: TGetProofs = async (
         throw new Error('no proof found');
       }
 
-      const scope = calculateScope(dropAddress);
+      const scopeToUse = scope || calculateScope((await getConfigs()).REGISTRY);
 
       const { merkleTreeDepth, merkleTreeRoot, message, points, nullifier } =
-        await generateProof(identity, data as any, 'verification', scope);
+        await generateProof(identity, data as any, 'verification', scopeToUse);
 
       semaphoreProofs.push({
         credential_group_id: credentialGroupId,
@@ -77,7 +79,7 @@ const prepareProofs: TGetProofs = async (
           merkle_tree_root: merkleTreeRoot,
           nullifier: nullifier,
           message: message,
-          scope,
+          scope: scopeToUse,
           points,
         },
       });

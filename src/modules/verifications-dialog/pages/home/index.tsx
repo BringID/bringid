@@ -1,7 +1,11 @@
 'use client'
 
 import { FC } from 'react';
-import { Container, VerificationsListStyled } from './styled-components';
+import {
+  Container,
+  VerificationsListStyled,
+  ButtonStyled
+} from './styled-components';
 import { Header } from '../../components';
 import { useVerifications } from '../../store/reducers/verifications';
 import { Task, tasks } from '../../../../core/task';
@@ -28,7 +32,11 @@ const renderContent = (
     />
   }
 
-  return (
+  const finishedVerifications = verifications.filter(verification => {
+    return verification.status === 'completed'
+  })
+
+  return <>
     <VerificationsListStyled
       tasks={availableTasks}
       devMode={devMode}
@@ -37,7 +45,17 @@ const renderContent = (
         setPage('tasks');
       }}
     />
-  );
+
+    <ButtonStyled
+      disabled={finishedVerifications.length === 0}
+      appearance='action'
+      onClick={() => {
+        setPage('proofs')
+      }}
+    >
+      Continue
+    </ButtonStyled>
+  </>
 };
 
 const Home: FC<TProps> = ({
@@ -63,8 +81,14 @@ const Home: FC<TProps> = ({
         userKey={user.key}
       />
 
-      {renderContent(user.key, availableTasks, verifications, true, setPage, generateSignature)} 
-      {/* devMode is false */}
+      {renderContent(
+        user.key,
+        availableTasks,
+        verifications,
+        true, // dev
+        setPage,
+        generateSignature
+      )}
     </Container>
   );
 };

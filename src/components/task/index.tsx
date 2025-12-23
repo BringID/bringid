@@ -18,7 +18,7 @@ const defineTaskContent = (
   status: TVerificationStatus,
   groups: TNotarizationGroup[],
   taskId: string,
-  userKey: string,
+  userKey: string | null,
   resultCallback: (verification: TVerification) => void
 ) => {
   switch (status) {
@@ -41,7 +41,7 @@ const defineTaskContent = (
 
 
                 if (group) {
-                  const semaphoreIdentity = createSemaphoreIdentity(userKey, group?.credentialGroupId)
+                  const semaphoreIdentity = createSemaphoreIdentity(userKey as string, group?.credentialGroupId)
 
                   const statePayload = {
                     registry: modeConfigs.REGISTRY,
