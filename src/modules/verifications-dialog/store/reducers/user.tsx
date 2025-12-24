@@ -11,6 +11,7 @@ enum ActionType {
   '/user/setAddress' = '/user/setAddress',
   '/user/setApiKey' = '/user/setApiKey',
   '/user/destroy' = '/user/destroy',
+  '/user/setScope' = '/user/setScope'
 }
 
 type Action<payload> = {
@@ -26,51 +27,59 @@ const initState: State = {
   id: null,
   address: null,
   loading: false,
-  apiKey: null
+  apiKey: null,
+  scope: null
 };
 
-export const setKey = (key: string): Action<string> => ({
+export const setKey = (key: string | null): Action<string | null> => ({
   type: ActionType['/user/setKey'],
   payload: key,
-});
+})
 
 export const destroy = () => ({
   type: ActionType['/user/destroy']
-});
+})
 
 export const setLoading = (loading: boolean): Action<boolean> => ({
   type: ActionType['/user/setLoading'],
   payload: loading,
-});
+})
+
+export const setScope = (scope: string | null): Action<string | null> => ({
+  type: ActionType['/user/setScope'],
+  payload: scope,
+})
 
 export const setId = (id: string): Action<string> => ({
   type: ActionType['/user/setId'],
   payload: id,
-});
+})
 
 export const setUser = (user: TUser): Action<TUser> => ({
   type: ActionType['/user/setUser'],
   payload: user,
-});
+})
 
-export const setAddress = (address: string): Action<string> => ({
+export const setAddress = (address: string | null): Action<string | null> => ({
   type: ActionType['/user/setAddress'],
   payload: address,
-});
+})
 
 export const setApiKey = (apiKey: string): Action<string> => ({
   type: ActionType['/user/setApiKey'],
   payload: apiKey,
-});
+})
 
 export default function user(state = initState, action: Action<any>): State {
   switch (action.type) {
     case ActionType['/user/setKey']:
-      console.log('KEY UPDATING')
       return { ...state, key: action.payload };
 
     case ActionType['/user/setUser']:
       return action.payload;
+
+    case ActionType['/user/setScope']:
+      return  { ...state, scope: action.payload };
 
     case ActionType['/user/destroy']:
       return initState

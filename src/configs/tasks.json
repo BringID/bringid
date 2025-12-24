@@ -3,8 +3,9 @@
     "title": "GitHub OAuth",
     "id": "1",
     "service": "GitHub",
-    "description": "Authorize you GitHub account",
+    "description": "Authorize your account",
     "icon": "https://images.seeklogo.com/logo-png/30/1/github-logo-png_seeklogo-304612.png",
+    "oauthUrl" : "auth/github/login",
     "groups": [
       {
         "points": 10,
@@ -16,12 +17,13 @@
     "title": "X (Twitter) OAuth",
     "id": "2",
     "service": "X (Twitter)",
-    "description": "Authorize you X (Twitter) account",
+    "description": "Authorize your account",
     "icon": "https://upload.wikimedia.org/wikipedia/commons/c/ce/X_logo_2023.svg",
+    "oauthUrl" : "auth/twitter/login",
     "groups": [
       {
         "points": 10,
-        "semaphoreGroupId": "111",
+        "semaphoreGroupId": "149",
         "credentialGroupId": "7"
       }
     ]

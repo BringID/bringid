@@ -11,6 +11,7 @@ import { Tag } from '../../components';
 // import getStorage from '../../db-storage';
 import configs from '../../configs';
 import modeConfigs from '../../configs/mode-configs';
+import { taskManagerApi } from '@/modules/verifications-dialog/api';
 
 const definePluginContent = (
   status: TVerificationStatus,
@@ -74,12 +75,7 @@ const Verification: FC<TProps> = ({
       setExpiration(updatedExpiration);
 
       if (updatedExpiration === 0) {
-        // const storage = await getStorage();
-        // await storage.updateVerificationStatus(credentialGroupId, 'completed');
-
-        // window.clearInterval(interval);
-
-        // update status to completed
+        window.clearInterval(interval);
       }
     }, 1000);
 
@@ -95,19 +91,21 @@ const Verification: FC<TProps> = ({
     fetched,
     async () => {
       if (!taskId) {
-        return alert('taskId not defined');
+        return alert('taskId not defined')
       }
-      // const verification = await relayer.getVerification(taskId);
 
-      // if (verification) {
-      //   const { txHash } = verification;
-      //   const configsResult = await modeConfigs()
+      try {
+        const result = await taskManagerApi.getVerification(taskId)
 
-      //   chrome.tabs.create({
-      //     url: `${defineExplorerURL(Number(configsResult.CHAIN_ID || '84532'))}/tx/${txHash}`,
-      //   });
-      // }
-    },
+        if (result) {
+          const { task } = result
+          const configsResult = await modeConfigs()
+          window.open(`${defineExplorerURL(Number(configsResult.CHAIN_ID || '84532'))}/tx/${task.tx_hash}`)
+        }
+      } catch (err) {
+        alert('verification fetch has failed')
+      }
+    }
   );
 
   return (

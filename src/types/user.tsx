@@ -4,4 +4,5 @@ export type TUser = {
   address: string | null;
   loading: boolean;
   apiKey: string | null;
+  scope: null | string
 };

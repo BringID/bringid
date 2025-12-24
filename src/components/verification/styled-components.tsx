@@ -58,6 +58,7 @@ export const Value = styled.div`
   display: flex;
   gap: 4px;
   align-items: center;
+  font-size: 12px;
 `;
 
 export const Icon = styled.img`

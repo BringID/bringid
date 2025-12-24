@@ -1,28 +1,22 @@
-import React, { FC } from 'react';
+import { FC } from 'react'
 import {
   Header,
   TextStyled,
-  ButtonStyled,
   AddressText,
   TitleStyled,
   Content,
   Texts,
   Address,
-} from './styled-components';
-import TProps from './types';
-import { shortenString } from '@/utils';
-import AddressIcon from '@/components/icons/address';
-import { addVerifications } from '../../store/reducers/verifications';
-import { destroy } from '../../store/reducers/user';
-import { useDispatch } from 'react-redux';
+} from './styled-components'
+import TProps from './types'
+import { shortenString } from '@/utils'
+import AddressIcon from '@/components/icons/address'
 
 const defineContent = (
   address: string | null,
   points: number,
   userKey: string | null
 ) => {
-
-  const dispatch = useDispatch()
 
   if (!address || !userKey) {
     return <TitleStyled>BringID</TitleStyled>
@@ -37,14 +31,6 @@ const defineContent = (
         </Address>
         <TextStyled>Total Bring Score: {points}</TextStyled>
       </Texts>
-      <ButtonStyled
-        onClick={async () => {
-          dispatch(addVerifications([]))
-          dispatch(destroy())
-        }}
-      >
-        Logout
-      </ButtonStyled>
     </Content>
   );
 };
@@ -54,11 +40,13 @@ const HeaderComponent: FC<TProps> = ({
   address,
   userKey
 }) => {
-  return <Header>{defineContent(
-    address,
-    points,
-    userKey
-  )}</Header>;
+  return <Header>
+    {defineContent(
+      address,
+      points,
+      userKey
+    )}
+  </Header>
 };
 
 export default HeaderComponent;

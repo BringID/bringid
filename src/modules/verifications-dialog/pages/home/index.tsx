@@ -41,9 +41,6 @@ const renderContent = (
       tasks={availableTasks}
       devMode={devMode}
       verifications={verifications}
-      onAddVerifications={() => {
-        setPage('tasks');
-      }}
     />
 
     <ButtonStyled
@@ -66,9 +63,7 @@ const Home: FC<TProps> = ({
   const { verifications, loading } = verificationsStore;
   const user = useUser();
 
-
   const availableTasks = tasks(true); //devMode
-
 
   const availablePoints = calculateAvailablePoints(verifications, true); //devMode
 

@@ -57,7 +57,7 @@ const defineTaskContent = (
                   setLoading(true)
 
                   const popup = window.open(
-                    `${configs.AUTH_DOMAIN}/auth/github/login?${queryParams}`,
+                    `${configs.AUTH_DOMAIN}/${task.oauthUrl}?${queryParams}`,
                     "oauth",
                     "width=400,height=600,popup=yes"
                   )
@@ -149,7 +149,10 @@ const Task: FC<TProps> = ({
     groups,
     id,
     userKey,
-    (verification) => dispatch(addVerification(verification))
+    (verification) => {
+      console.log('IS GOINT TO BE ADD: ', { verification })
+      dispatch(addVerification(verification))
+    }
   );
 
   return (

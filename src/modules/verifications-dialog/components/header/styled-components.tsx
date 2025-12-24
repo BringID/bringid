@@ -17,10 +17,6 @@ export const UserStatus = styled.span`
   text-transform: capitalize;
 `;
 
-export const ButtonStyled = styled(Button)`
-  margin-left: auto;
-`;
-
 export const Content = styled.div`
   display: flex;
   align-items: center;

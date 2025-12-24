@@ -9,27 +9,19 @@ import { TProps } from './types'
 import { Home, Proofs } from '../pages'
 import { useDispatch } from 'react-redux'
 import {
-  registerOpenModal,
-  registerRequestProofs
+  registerOpenModal
 } from '../events/event-bus';
 import { setIsOpen, setLoading, useModal } from '../store/reducers/modal';
-import { setAddress, setApiKey, useUser } from '../store/reducers/user';
+import { setAddress, setApiKey, setKey, setScope, useUser } from '../store/reducers/user';
 import { TGenerateSignature, TVerification, TVerificationStatus } from '@/types';
 import semaphore from '../semaphore';
 import { Task, tasks } from '@/core';
 import {
-  addVerification,
   addVerifications,
   useVerifications
 } from '../store/reducers/verifications';
-import { ConfirmationOverlay, LoadingOverlay } from '../components'
-import { registerRequest, openRequest, useRequestProofs, setScope } from '../store/reducers/request-proofs'
-import { calculateAvailablePoints } from '@/utils'
+import { LoadingOverlay } from '../components'
 import { setProofsGeneratedCallback, callProofsGeneratedCallback } from '../callbacks'
-
-
-let resolveRequest: ((value: any) => void) | null = null;
-let rejectRequest: ((reason?: any) => void) | null = null;
 
 const defineContent = (
   page: string,
@@ -70,15 +62,20 @@ const uploadPrevVerifications = async (
   setLoading: (
     loading: boolean
   ) => void,
-  addVerification: (verification: TVerification) => void
+  addVerifications: (verifications: TVerification[]) => void
 ) => {
   setLoading(true)
+
+  const verifications: TVerification[] = []
   for (const task of tasks) {
     for (const group of task.groups) {
+
+
       const identity = semaphore.createIdentity(
         String(userKey),
         group.credentialGroupId,
-      );
+      )
+
       const { commitment } = identity;
 
       try {
@@ -94,13 +91,17 @@ const uploadPrevVerifications = async (
             fetched: true,
             taskId: task.id,
           }
-          addVerification(newTask)
+          verifications.push(newTask)
         }
       } catch (err) {
         console.log(`proof for ${commitment} was not added before`);
       }
     }
   }
+
+  addVerifications(verifications)
+
+
   setLoading(false)
 }
 
@@ -113,13 +114,6 @@ const InnerModal: FC<TProps> = ({
   const dispatch = useDispatch()
 
   const { isOpen, loading } = useModal()
-
-  const {
-    isOpen: requestIsOpen,
-    pointsRequired,
-    scope
-  } = useRequestProofs()
-
   const user = useUser()
   const { verifications } = useVerifications()
 
@@ -128,35 +122,11 @@ const InnerModal: FC<TProps> = ({
       args
     ) => {
       setPage('home');
-      dispatch(openRequest(false));
       dispatch(setIsOpen(true))
       dispatch(setScope(args.scope || null))
       setProofsGeneratedCallback(args.proofsGeneratedCallback)
     });
-
-    registerRequestProofs(async ({ pointsRequired, scope }) => {
-      if (!user.key) {
-        return alert('User key is not ready. Please sign in to BringID widget first')
-      }
-      dispatch(registerRequest(pointsRequired))
-      dispatch(openRequest(true))
-      dispatch(setIsOpen(true))
-
-      dispatch(setScope(scope || null))
-    
-      return new Promise((resolve, reject) => {
-        resolveRequest = resolve;
-        rejectRequest = reject;
-      });
-    });
-
-    return () => {
-      resolveRequest = null;
-      rejectRequest = null;
-    };
-  }, [
-    user.key
-  ]);
+  }, []);
 
 
   useEffect(() => {
@@ -188,26 +158,48 @@ const InnerModal: FC<TProps> = ({
           return item
         })
         console.log({ verificationsUpdated })
+    
         if (updated) dispatch(addVerifications(verificationsUpdated))
 
       } catch (err) {
         console.log({ err });
       }
-    }, 1000);
+    }, 2000);
 
     return () => clearInterval(interval);
-  }, [verifications]);
+  }, [
+    verifications
+  ]);
 
   const availableTasks = tasks(true)
 
   const [ page, setPage ] = useState('home')
 
   useEffect(() => {
-    if (address) dispatch(setAddress(address));
-    if (apiKey) dispatch(setApiKey(apiKey));
+    if (address) {
+      if (user.address) {
+        if (address !== user.address) {
+          dispatch(setKey(null))
+          dispatch(addVerifications([]))
+        }
+      }
+      dispatch(setAddress(address))
+    } else {
+      if (user.address) {
+        // new address is undefined
+        dispatch(setKey(null))
+        dispatch(addVerifications([]))
+        dispatch(setAddress(null))
+      }
+    }
+
+    if (apiKey) {
+      dispatch(setApiKey(apiKey));
+    }
   }, [
+    user.address,
     apiKey,
-    address
+    address 
   ]);
 
   useEffect(() => {
@@ -217,14 +209,14 @@ const InnerModal: FC<TProps> = ({
       availableTasks,
       user.key,
       (loading: boolean) => dispatch(setLoading(loading)),
-      (verification) => dispatch(addVerification(verification))
+      (verifications) => {
+        console.log('HERE uploading verifications')
+        dispatch(addVerifications(verifications))
+      }
     )
-
   }, [
     user.key
   ]);
-
-  const availablePoints = calculateAvailablePoints(verifications, true)
 
   // return <WagmiProvider>
     return <Container>
@@ -233,22 +225,6 @@ const InnerModal: FC<TProps> = ({
         visible={isOpen}
         onClose={() => dispatch(setIsOpen(false))}
       >
-        {requestIsOpen && pointsRequired && <ConfirmationOverlay
-          pointsRequired={pointsRequired}
-          scope={scope}
-          points={availablePoints}
-          onClose={() => {
-            rejectRequest?.('User cancelled');
-            rejectRequest = null;
-            dispatch(openRequest(false));
-          }}
-          onAccept={(proofs) => {
-            resolveRequest?.(proofs);
-            resolveRequest = null;
-            dispatch(openRequest(false));
-            dispatch(setIsOpen(false))
-          }}
-        />}
         {loading && <LoadingOverlay title="Loading..."/>}
         {defineContent(
           page,

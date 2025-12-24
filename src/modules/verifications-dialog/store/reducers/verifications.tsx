@@ -50,8 +50,9 @@ export default function verifications(
   switch (action.type) {
     case ActionType['/verifications/addVerification']: {
       const exists = state.verifications.find(
-        (verification) => verification.credentialGroupId,
-      );
+        (verification) => verification.credentialGroupId === action.payload.credentialGroupId
+      )
+
       if (exists) {
         const verifications = state.verifications.map((verification) => {
           if (
@@ -64,8 +65,9 @@ export default function verifications(
         return {
           ...state,
           verifications,
-        };
+        }
       } else {
+
         return {
           ...state,
           verifications: [action.payload, ...state.verifications],

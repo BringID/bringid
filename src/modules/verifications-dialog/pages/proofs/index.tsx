@@ -27,7 +27,6 @@ import { useUser } from '../../store/reducers/user'
 import { TVerification } from '@/types'
 import { TProps } from './types'
 import { prepareProofs } from '../../utils'
-import { useRequestProofs } from '../../store/reducers/request-proofs'
 import { Tag } from '@/components'
 
 const renderContent = (
@@ -64,7 +63,6 @@ const Proofs: FC<TProps> = ({
 }) => {
   const { verifications } = useVerifications();
   const user = useUser()
-  const requestProofs = useRequestProofs()
   const [loading, setLoading] = useState<boolean>(false);
 
 
@@ -149,7 +147,7 @@ const Proofs: FC<TProps> = ({
               const proofs = await prepareProofs(
                 user.key as string,
                 verifications,
-                requestProofs.scope,
+                user.scope,
                 pointsSelected,
                 selected,
               );

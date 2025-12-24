@@ -14,7 +14,6 @@ import { useUser } from '../../store/reducers/user';
 
 const VerificationsList: FC<TProps> = ({
   verifications,
-  onAddVerifications,
   className,
   devMode,
   tasks
@@ -46,11 +45,16 @@ const VerificationsList: FC<TProps> = ({
             verifications
           )
 
+          console.log({ relatedVerification })
+
           if (relatedVerification) {
              const relatedTaskData = defineTaskByCredentialGroupId(
               relatedVerification.credentialGroupId,
               devMode //devmode
             )
+
+            console.log({ relatedTaskData })
+
 
             if (relatedTaskData) {
               return (
@@ -85,9 +89,6 @@ const VerificationsList: FC<TProps> = ({
             );
           }
         })}
-      {/* <ButtonStyled onClick={onAddVerifications} appearance="action">
-        Add verifications
-      </ButtonStyled> */}
     </Container>
   );
 };

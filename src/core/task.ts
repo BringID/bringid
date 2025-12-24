@@ -7,6 +7,7 @@ export type Task = {
   icon: string;
   groups: TNotarizationGroup[];
   service: string;
+  oauthUrl: string | undefined
 };
 
 function loadTasks(
@@ -31,6 +32,7 @@ function loadTasks(
 
       return {
         title: task.title,
+        oauthUrl: task.oauthUrl,
         id: task.id,
         description: task.description,
         icon: task.icon,
