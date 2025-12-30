@@ -16,6 +16,9 @@ import defineExplorerURL from './define-explorer-url';
 import areArraysEqual from './are-arrays-equal';
 import areObjectsEqual from './are-objects-equal';
 import defineInitialSelectedVerifications from './define-initial-selected-verifications';
+import getOAuthSemaphoreData from './get-oauth-semaphore-data'
+import defineGroupByZKTLSResult from './define-group-by-zktls-result'
+import getZKTLSSemaphoreData from './get-zk-tls-semaphore-data'
 
 export {
   generateId,
@@ -35,5 +38,8 @@ export {
   defineZuploNetworkName,
   defineRelatedVerification,
   calculateAvailablePoints,
-  defineInitialSelectedVerifications
+  defineInitialSelectedVerifications,
+  getOAuthSemaphoreData,
+  defineGroupByZKTLSResult,
+  getZKTLSSemaphoreData
 }

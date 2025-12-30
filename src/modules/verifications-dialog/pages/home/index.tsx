@@ -8,19 +8,19 @@ import {
 } from './styled-components';
 import { Header } from '../../components';
 import { useVerifications } from '../../store/reducers/verifications';
-import { Task, tasks } from '../../../../core/task';
+import { tasks } from '../../../../core/task';
 import {
   LoadingOverlay,
   Authorize,
 } from '../../components';
 import { calculateAvailablePoints } from '@/utils';
 import { useUser } from '../../store/reducers/user';
-import { TVerification } from '@/types';
+import { TVerification, TTask } from '@/types';
 import { TProps } from './types'
 
 const renderContent = (
   userKey: string | null,
-  availableTasks: Task[],
+  availableTasks: TTask[],
   verifications: TVerification[],
   devMode: boolean,
   setPage: (page: string) => void,

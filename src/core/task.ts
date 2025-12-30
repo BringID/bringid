@@ -1,18 +1,8 @@
-import { TNotarizationGroup } from '@/types';
-
-export type Task = {
-  id: string;
-  title: string;
-  description?: string;
-  icon: string;
-  groups: TNotarizationGroup[];
-  service: string;
-  oauthUrl: string | undefined
-};
+import { TTask } from '@/types';
 
 function loadTasks(
   devMode: boolean
-): Task[] {
+): TTask[] {
   try {
     const tasksConfig = devMode ? require('../configs/tasks-sepolia.json') : require('../configs/tasks.json');
 
@@ -23,7 +13,7 @@ function loadTasks(
     }
 
     // Parse and validate each task
-    return tasksConfig.map((task): Task => {
+    return tasksConfig.map((task): TTask => {
       // Ensure required fields are present
       if (typeof task.title !== 'string' || !task.groups) {
         console.warn('Invalid task format:', task);
@@ -48,7 +38,7 @@ function loadTasks(
 
 export function tasks(
   devMode: boolean
-): Task[] {
+): TTask[] {
   const TASKS = loadTasks(devMode);
   return [...TASKS];
 }

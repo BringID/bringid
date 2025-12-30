@@ -1,8 +1,7 @@
-import { Task } from '../core';
-import { TVerification } from '../types';
+import { TVerification, TTask } from '../types';
 
 const defineRelatedVerification = (
-  task: Task,
+  task: TTask,
   verifications: TVerification[],
 ) => {
   if (!task?.groups || !Array.isArray(verifications)) return null;

@@ -1,14 +1,12 @@
-import React, { FC } from 'react';
+import { FC } from 'react';
 
 import {
   Container,
-  ButtonStyled,
   NoteStyled,
   LinkStyled,
 } from './styled-components';
 import { Task, Verification } from '@/components';
 import TProps from './types';
-import NoVerificationsFound from '../no-verifications-found';
 import { defineRelatedVerification, defineTaskByCredentialGroupId } from '@/utils';
 import { useUser } from '../../store/reducers/user';
 
@@ -77,13 +75,8 @@ const VerificationsList: FC<TProps> = ({
             // here render task, not verification
             return (
               <Task
-                key={task.id}
-                title={task.title}
-                description={task.description}
-                groups={task.groups}
+                task={task}
                 status='default'
-                icon={task.icon}
-                id={task.id}
                 userKey={user.key}
               />
             );

@@ -1,4 +1,4 @@
-import { Task, tasks } from '../core'
+import { tasks } from '../core'
 import { TNotarizationGroup } from '../types'
 
 type TDefineTaskByCredentialGroupId = (
