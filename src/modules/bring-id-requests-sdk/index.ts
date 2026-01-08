@@ -70,8 +70,11 @@ export class BringIDRequestsSDK {
     });
   }
 
-  /** PUBLIC METHODS */
 
+
+
+  
+  /** PUBLIC METHODS */
   checkExtensionStatus: TCheckExtensionStatus = async () => {
     return this.request<{ status: TExtensionStatus }>("CHECK_EXTENSION_STATUS_REQUEST");
   }
@@ -83,6 +86,7 @@ export class BringIDRequestsSDK {
   }) => {
     return this.request<{ proofs: TSemaphoreProof[], points: number }>("PROOFS_REQUEST", payload);
   }
+
 }
 
 export default BringIDRequestsSDK

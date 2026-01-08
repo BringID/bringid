@@ -1,6 +1,5 @@
 import { FC } from 'react'
 import { Container } from './styled-components'
-import Icons from '@/components/icons'
 import TProps from './types'
 
 const CloseButton: FC<TProps> = ({
@@ -8,7 +7,7 @@ const CloseButton: FC<TProps> = ({
   onClick
 }) => {
   return <Container className={className} onClick={onClick}>
-    <Icons.CloseIcon />
+    X
   </Container>
 }
 
