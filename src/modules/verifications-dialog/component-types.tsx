@@ -5,9 +5,6 @@ export type TProps = {
   address?: string
   generateSignature?: TGenerateSignature
   connectUrl?: string
-  onLogin?: () => void
-  onLogout?: () => void
-  visible?: boolean
+  scope?: string
   iframeOnLoad: () => void
-  setVisible: (visible: boolean) => void
 }
