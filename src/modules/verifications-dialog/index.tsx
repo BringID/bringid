@@ -7,7 +7,8 @@ import { useRef, useState, useEffect } from 'react'
 import { useMessageProxy } from '@/hooks'
 import {
   DialogStyled,
-  IFrame
+  IFrame,
+  DialogClassName
 } from './styled-components'
 import { registerOpenModal } from './events/event-bus'
 import { TSemaphoreProof } from '@/types'
@@ -67,7 +68,7 @@ export const VerificationsDialog: React.FC<TProps> = ({
 
   return (
     <ThemeProvider theme={light}>
-      <DialogStyled visible={visible} onClose={() => setVisible(false)}>
+      <DialogStyled visible={visible} onClose={() => setVisible(false)} dialogClassName={DialogClassName}>
         <IFrame
           ref={iframeRef}
           src={iframeSrc}

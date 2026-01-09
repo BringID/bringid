@@ -20,7 +20,7 @@ export const DialogStyled = styled(Dialog)<{
 
 export const IFrame = styled.iframe`
   width: 100%;
-  height: 500px;
+  height: 600px;
   border: none;
   overflow: auto;
 `
