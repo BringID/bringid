@@ -1,9 +1,8 @@
 import { TSemaphoreProof } from "@/types"
 
 type TArgs = {
-  drop: string;
   address: string;
-  pointsRequired: number;
+  score?: string;
 }
 
 type TRequestProofs = (payload: TArgs) => Promise<{

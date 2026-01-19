@@ -73,9 +73,8 @@ export class BringIDSDK {
   
   /** PUBLIC METHODS */
   requestProofs: TRequestProofs = async (payload: {
-    drop: string;
     address: string;
-    pointsRequired: number;
+    score: string;
   }) => {
     return this.request<{ proofs: TSemaphoreProof[], points: number }>("PROOFS_REQUEST", payload);
   }

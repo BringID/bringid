@@ -16,7 +16,6 @@ import { TSemaphoreProof } from '@/types'
 import { createQueryString } from '@/utils'
 import { Spinner } from '@/components'
 
-
 let proofsGeneratedCallback: ((
   proofs: TSemaphoreProof[],
   points: number
