@@ -8,11 +8,14 @@ import { useMessageProxy } from '@/hooks'
 import {
   DialogStyled,
   IFrame,
-  DialogClassName
+  DialogClassName,
+  LoadingScreen
 } from './styled-components'
 import { registerOpenModal } from './events/event-bus'
 import { TSemaphoreProof } from '@/types'
 import { createQueryString } from '@/utils'
+import { Spinner } from '@/components'
+
 
 let proofsGeneratedCallback: ((
   proofs: TSemaphoreProof[],
@@ -24,7 +27,7 @@ export const VerificationsDialog: React.FC<TProps> = ({
   address,
   generateSignature,
   iframeOnLoad,
-  scope,
+  mode = 'production',
   connectUrl = 'https://widget.bringid.org'
 }) => {
 
@@ -36,13 +39,20 @@ export const VerificationsDialog: React.FC<TProps> = ({
       args
     ) => {
       setVisible(true)
-      console.log('registerOpenModal: ', {
-        args
-      })
       proofsGeneratedCallback = args.proofsGeneratedCallback
+
+      iframeRef.current && iframeRef.current.contentWindow?.postMessage(
+        {
+          type: 'CURRENT_SCOPE_READY',
+          payload: {
+            scope: args.scope
+          }
+        },
+        connectUrl
+      )
+
     });
   }, []);
-
 
   useMessageProxy(
     iframeRef,
@@ -52,12 +62,14 @@ export const VerificationsDialog: React.FC<TProps> = ({
     generateSignature
   );
 
+  const [ loading, setLoading ] = useState<boolean>(true)
+
   const queryParams = createQueryString(
     {
       url: encodeURIComponent(window.location.href),
       apiKey,
       address,
-      scope
+      mode
     }
   )
 
@@ -69,10 +81,16 @@ export const VerificationsDialog: React.FC<TProps> = ({
   return (
     <ThemeProvider theme={light}>
       <DialogStyled visible={visible} onClose={() => setVisible(false)} dialogClassName={DialogClassName}>
+        {loading && <LoadingScreen>
+          <Spinner size='large' />
+        </LoadingScreen>}
         <IFrame
           ref={iframeRef}
           src={iframeSrc}
-          onLoad={iframeOnLoad}
+          onLoad={() => {
+            iframeOnLoad && iframeOnLoad()
+            setLoading(false)
+          }}
         />
       </DialogStyled>
     </ThemeProvider>

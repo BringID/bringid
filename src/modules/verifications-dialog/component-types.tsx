@@ -5,6 +5,6 @@ export type TProps = {
   address?: string
   generateSignature?: TGenerateSignature
   connectUrl?: string
-  scope?: string
-  iframeOnLoad: () => void
+  iframeOnLoad?: () => void
+  mode?: 'dev' | 'production'
 }

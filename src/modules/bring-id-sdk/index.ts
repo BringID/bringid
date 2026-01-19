@@ -1,8 +1,8 @@
 import { generateId } from "@/utils"
-import { TRequestType, TRequest, TResponse, TExtensionStatus, TSemaphoreProof } from "@/types"
-import { TCheckExtensionStatus, TRequestProofs } from "./types" 
+import { TRequestType, TRequest, TResponse, TSemaphoreProof } from "@/types"
+import { TRequestProofs } from "./types" 
 
-export class BringIDRequestsSDK {
+export class BringIDSDK {
   private dialogWindowOrigin = window.location.origin;
   private connectDialogReady = false;
 
@@ -70,15 +70,8 @@ export class BringIDRequestsSDK {
     });
   }
 
-
-
-
   
   /** PUBLIC METHODS */
-  checkExtensionStatus: TCheckExtensionStatus = async () => {
-    return this.request<{ status: TExtensionStatus }>("CHECK_EXTENSION_STATUS_REQUEST");
-  }
-
   requestProofs: TRequestProofs = async (payload: {
     drop: string;
     address: string;
@@ -89,4 +82,4 @@ export class BringIDRequestsSDK {
 
 }
 
-export default BringIDRequestsSDK
+export default BringIDSDK

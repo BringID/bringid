@@ -50,6 +50,11 @@ function useMessageProxy(
           } 
         }
 
+        if (data.type === 'CLOSE_MODAL') {
+          setVisible(false)
+          return
+        }
+
 
         if (data.type === 'PROOFS_READY') {
 

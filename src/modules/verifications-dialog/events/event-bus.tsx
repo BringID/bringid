@@ -5,7 +5,7 @@ type TOpenModalArgs = {
     proofs: TSemaphoreProof[],
     points: number
   ) => void,
-  // scope?: string
+  scope?: string
 }
 
 type TOpenModalCallback = (args: TOpenModalArgs) => void;
