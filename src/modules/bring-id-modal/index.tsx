@@ -16,12 +16,7 @@ import { TSemaphoreProof } from '@/types'
 import { createQueryString } from '@/utils'
 import { Spinner } from '@/components'
 
-let proofsGeneratedCallback: ((
-  proofs: TSemaphoreProof[],
-  points: number
-) => void) | null = null
-
-export const VerificationsDialog: React.FC<TProps> = ({
+export const BringIDModal: React.FC<TProps> = ({
   apiKey,
   address,
   generateSignature,
@@ -32,36 +27,20 @@ export const VerificationsDialog: React.FC<TProps> = ({
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [ visible, setVisible ] = useState<boolean>(false)
-
-  useEffect(() => {
-    registerOpenModal((
-      args
-    ) => {
-      setVisible(true)
-      proofsGeneratedCallback = args.proofsGeneratedCallback
-
-      iframeRef.current && iframeRef.current.contentWindow?.postMessage(
-        {
-          type: 'CURRENT_SCOPE_READY',
-          payload: {
-            scope: args.scope
-          }
-        },
-        connectUrl
-      )
-
-    });
-  }, []);
+  const [ isReady, setIsReady ] = useState<boolean>(false)
 
   useMessageProxy(
+    isReady,
     iframeRef,
     connectUrl,
     setVisible,
-    proofsGeneratedCallback,
     generateSignature
   );
 
-  const [ loading, setLoading ] = useState<boolean>(true)
+
+  if (typeof window === "undefined") {
+    return null
+  }
 
   const queryParams = createQueryString(
     {
@@ -80,7 +59,7 @@ export const VerificationsDialog: React.FC<TProps> = ({
   return (
     <ThemeProvider theme={light}>
       <DialogStyled visible={visible} onClose={() => setVisible(false)} dialogClassName={DialogClassName}>
-        {loading && <LoadingScreen>
+        {!isReady && <LoadingScreen>
           <Spinner size='large' />
         </LoadingScreen>}
         <IFrame
@@ -88,7 +67,7 @@ export const VerificationsDialog: React.FC<TProps> = ({
           src={iframeSrc}
           onLoad={() => {
             iframeOnLoad && iframeOnLoad()
-            setLoading(false)
+            setIsReady(true)
           }}
         />
       </DialogStyled>
@@ -98,4 +77,4 @@ export const VerificationsDialog: React.FC<TProps> = ({
 
 
 
-export default VerificationsDialog
+export default BringIDModal

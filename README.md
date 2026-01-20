@@ -1,6 +1,6 @@
-# BringID Modal SDK 0.0.18 – Next.js Integration Guide
+# BringID Modal SDK 0.0.19 – Next.js Integration Guide
 
-This guide explains how to integrate **bringid-sdk** into a **Next.js App Router** application, including modal setup and requesting proofs.
+This guide explains how to integrate **bringid-sdk** into a **Next.js App Router** application, including verifying humanity and requesting score.
 
 ---
 
@@ -9,7 +9,7 @@ This guide explains how to integrate **bringid-sdk** into a **Next.js App Router
 Install the SDK using Yarn:
 
 +++bash
-yarn add bringid-sdk@^0.0.14
+yarn add bringid-sdk
 +++
 
 ---
@@ -27,28 +27,51 @@ yarn add bringid-sdk@^0.0.14
 
 The BringID SDK works by:
 
-1. Rendering a global verification modal
-2. Exposing SDK methods (`openModal`)
-3. Allowing interaction from client components
+1. SDK initialization
+2. Exposing SDK methods (`verifyHumanity`, `requestScore`)
+3. Rendering a global BringID modal (ONLY for `verifyHumanity` method to interact with BringIDModal)
+4. Allowing interaction from client components
+
+---
+
+## SDK initialization
+
+Create an sdk instance
+
+```tsx
+import { BringIDSDK } from "bringid-sdk";
+const sdk = new BringIDSDK();
+```
+
+## SDK methods
+
+When the sdk is ready you can use methods to request address score (`requestScore`) and to verify humanity (`verifyHumanity`)
+
+### sdk.requestScore method
+
+```tsx
+const { score } = await sdk.requestScore("0x..."); // address is a required param
+console.log(score); // `score` is a number between 0 and 100
+```
+
+### sdk.verifyHumanity method
 
 To use it correctly, you must:
 
 - Create a **Modal Provider**
 - Wrap it in your **Root Layout**
-- Call SDK methods from **Client Components only**
+- Call `sdk.verifyHumanity` from **Client Components only**
 
----
-
-## 1. Create Modal Provider
+#### 1. Create Modal Provider
 
 Create a client-side provider that renders the verification dialog once.
 
-**`components/ModalProvider.tsx`**
+**`@/app/providers/ModalProvider.tsx`**
 
 ```tsx
 "use client";
 
-import { VerificationsDialog } from "bringid-sdk";
+import { BringIDModal } from "bringid-sdk";
 import React from "react";
 
 type Props = {
@@ -57,13 +80,16 @@ type Props = {
 
 export default function ModalProvider({ children }: Props) {
   // Replace with actual wallet data (wagmi, ethers, etc.)
-  const address: string | null = null;
+  const address: string | undefined = undefined;
   const signer: any = null;
 
   return (
     <>
-      <VerificationsDialog
-        address={address || undefined}
+      <BringIDModal
+        address={address}
+        iframeOnLoad={() => {
+          console.log("modal window is ready to use. iframe is fully loaded");
+        }}
         generateSignature={
           signer
             ? async (value: string) => await signer.signMessage(value)
@@ -76,22 +102,22 @@ export default function ModalProvider({ children }: Props) {
 }
 ```
 
-### Notes
+##### Notes
 
-- Render `VerificationsDialog` only once in the app
-- `address` and `signer` should come from your wallet provider
+- Render `BringIDModal` only once in the app
+- `address` and signer in the `generateSignature` callback should come from your wallet provider (wagmi, etc.)
+- **IMPORTANT: use `mode="dev"` property to enable dev mode. Otherwise `production` mode is enabled by default**
 
 ---
 
-## 2. Wrap Root Layout
+#### 2. Wrap Root Layout
 
 Wrap your app with the modal provider in `RootLayout`.
 
-**`app/layout.tsx`**
+**`@/app/layout.tsx`**
 
 ```tsx
-import ModalProvider from "@/components/ModalProvider";
-import styles from "./page.module.css";
+import ModalProvider from "@/app/providers/ModalProvider";
 
 export default function RootLayout({
   children,
@@ -106,7 +132,7 @@ export default function RootLayout({
           content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"
         />
       </head>
-      <body className={styles.page}>
+      <body>
         <WagmiProvider>
           <ModalProvider>{children}</ModalProvider>
         </WagmiProvider>
@@ -118,57 +144,97 @@ export default function RootLayout({
 
 ---
 
-## 3. Using SDK Methods
+#### 3. Call verifyHumanity SDK Method
 
-The SDK exposes the following client-side method:
+When the modal window is fully rendered you can use `sdk.verifyHumanity` method
 
-`openModal ( proofsGeneratedCallback, scope )` – opens the verification modal
+```tsx
+const { proofs, points } = await sdk.verifyHumanity();
+console.log(
+  proofs, // array of semaphore proofs
+  points, // amount of points
+);
+```
 
-- proofsGeneratedCallback - required. Should be presented as a callback with two arguments: proofs (array of semaphore proofs) points (amount of points for seleceted array of proofs)
+Also you can use `scope` option. It can be presented as a string if specific scope needed. By default the scope will be computed from registry address
 
-- scope - NOT required. Should be presented as a string if specific scope needed. By default the scope will be computed from registry address
+```tsx
+const { proofs, points } = await sdk.verifyHumanity({
+  scope: "0x....",
+});
+
+console.log(
+  proofs, // array of semaphore proofs
+  points, // amount of points
+);
+```
 
 That method should be called from **Client Components**.
 
 ---
 
-## Example: Open Modal
+#### Example: Verify humanity
 
-**`components/CreateID.tsx`**
+**`@/app/utils/sdk.tsx`**
+
+```tsx
+import { BringIDSDK } from "bringid-sdk";
+
+const initSDK = (() => {
+  let sdk: null | BringIDSDK = null;
+
+  return () => {
+    if (!sdk) {
+      const newSDK = new BringIDSDK();
+      sdk = newSDK;
+
+      return sdk;
+    }
+
+    return sdk;
+  };
+})();
+
+export default initSDK;
+```
+
+**`@/app/components/main.tsx`**
 
 ```tsx
 "use client";
 
 import { FC, useState } from "react";
-import { openModal, requestProofs } from "bringid-sdk";
+import initSDK from "@/app/utils/sdk.tsx";
 
 type Props = {
   setStage?: (stage: string) => void;
 };
 
-const CreateID: FC<Props> = ({ setStage }) => {
-  const [proofs, setProofs] = useState<any>(null);
+const Main: FC<Props> = ({ setStage }) => {
+  const [points, setPoints] = useState<number>(0);
 
   return (
     <div>
-
+      <h1>Humanity points: {points}</h1>
       <button
-        onClick={() => {
-          openModal(
-            proofsGeneratedCallback: (proofs, points) => {
-              setProofs(proofs)
-            }
-          );
+        onClick={async () => {
+          try {
+            const sdk = initSDK();
+            const { points } = await sdk.verifyHumanity();
+
+            setPoints(points);
+          } catch (err) {
+            console.error(err);
+          }
         }}
       >
-        Open popup
+        Verify humanity
       </button>
-
     </div>
   );
 };
 
-export default CreateID;
+export default Main;
 ```
 
 ---

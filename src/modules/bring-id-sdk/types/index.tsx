@@ -1,7 +1,9 @@
 import TCheckExtensionStatus from './check-extension-status'
-import TRequestProofs from './request-proofs'
+import TVerifyHumanity from './verify-humanity'
+import TRequestScore from './request-score'
 
 export {
   TCheckExtensionStatus,
-  TRequestProofs
+  TVerifyHumanity,
+  TRequestScore
 }

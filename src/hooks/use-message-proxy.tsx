@@ -2,13 +2,10 @@ import { useEffect } from "react"
 import { TGenerateSignature, TSemaphoreProof } from "@/types"
 
 function useMessageProxy(
+  isReady: boolean,
   iframeRef,
   connectUrl: string,
   setVisible: (visible: boolean) => void,
-  proofsGeneratedCallback: ((
-    proofs: TSemaphoreProof[],
-    points: number
-  ) => void) | null,
   generateSignature?: TGenerateSignature
 ) {
   useEffect(() => {
@@ -18,7 +15,15 @@ function useMessageProxy(
 
       // From WEBSITE where CURRENT SDK is used → forward to iframe WIDGET
       if (fromOrigin === window.location.origin) {
+
         if (!iframeRef.current) return;
+
+        if (data.type === 'PROOFS_REQUEST') {
+          if (!isReady) {
+            return alert('Modal window is not ready yet')
+          }
+          setVisible(true)
+        }
 
         iframeRef.current.contentWindow?.postMessage(
           data,
@@ -50,40 +55,11 @@ function useMessageProxy(
           } 
         }
 
-        if (data.type === 'CLOSE_MODAL') {
+        if (
+          data.type === 'CLOSE_MODAL' ||
+          data.type === 'PROOFS_RESPONSE'
+        ) {
           setVisible(false)
-          return
-        }
-
-
-        if (data.type === 'PROOFS_READY') {
-
-          console.log('PROOFS_READY IN SDK', { data })
-          const {
-            payload: {
-              proofs,
-              points
-            }
-          }: {
-            payload: {
-              proofs: TSemaphoreProof[],
-              points: number
-            }
-          } = data
-          if (!proofsGeneratedCallback) {
-            return alert('proofsGeneratedCallback IS NOT AVAILABLE')
-          }
-
-          proofsGeneratedCallback(
-            proofs,
-            points
-          )
-
-          setVisible(false)
-
-
-
-          return
         }
 
         // proxy to WEBSITE where CURRENT SDK is used
@@ -96,7 +72,7 @@ function useMessageProxy(
     return () => window.removeEventListener("message", onMessage);
   }, [
     generateSignature,
-    proofsGeneratedCallback
+    isReady
   ]);
 }
 

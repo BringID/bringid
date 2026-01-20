@@ -1,10 +1,13 @@
 import { generateId } from "@/utils"
 import { TRequestType, TRequest, TResponse, TSemaphoreProof } from "@/types"
-import { TRequestProofs } from "./types" 
+import {
+  TVerifyHumanity,
+  TRequestScore
+} from "./types" 
+import api from "@/api";
 
 export class BringIDSDK {
   private dialogWindowOrigin = window.location.origin;
-  private connectDialogReady = false;
 
   private pendingRequests = new Map<
     string,
@@ -19,39 +22,31 @@ export class BringIDSDK {
     window.addEventListener("message", this.handleMessage);
   }
 
-  /** SDK notifies ConnectDialog that SDK is ready */
-  public markDialogReady() {
-    this.connectDialogReady = true;
-  }
-
   /** POSTMESSAGE API */
   private sendMessageToDialog(msg: TRequest) {
-    if (!this.connectDialogReady) {
-      throw new Error("ConnectDialog is not mounted.");
-    }
-
     console.log('sendMessageToDialog: ', { msg, dialogWindowOrigin: this.dialogWindowOrigin })
     window.postMessage(msg, this.dialogWindowOrigin);
   }
 
   private handleMessage = (event: MessageEvent) => {
-    console.log('handleMessage: ', {
-      event,
-      dialogWindowOrigin: this.dialogWindowOrigin
-    })
     if (event.origin !== this.dialogWindowOrigin) return;
 
     const data: TResponse = event.data;
 
-    if (!data.requestId) return;
+    if (!data.requestId) {
+      return
+    }
+
+    if (data.type === 'CLOSE_MODAL') {
+      this.rejectAllPendingRequests('REJECTED')
+      return
+    }
 
     const pending = this.pendingRequests.get(data.requestId);
-    console.log('handleMessage: ', { pending })
     if (!pending) return;
 
     // i have pending request, that should not be captured
 
-    console.log({ data, pending })
     if (pending.requestType === data.type) { return }
 
     this.pendingRequests.delete(data.requestId);
@@ -70,13 +65,27 @@ export class BringIDSDK {
     });
   }
 
-  
+  private rejectAllPendingRequests(error: any): void {
+    for (const { reject } of this.pendingRequests.values()) {
+      reject(error);
+    }
+
+    this.pendingRequests.clear();
+  }
+
   /** PUBLIC METHODS */
-  requestProofs: TRequestProofs = async (payload: {
-    address: string;
-    score: string;
-  }) => {
+  verifyHumanity: TVerifyHumanity = async (payload) => {
     return this.request<{ proofs: TSemaphoreProof[], points: number }>("PROOFS_REQUEST", payload);
+  }
+
+  requestScore: TRequestScore = async (
+    address
+  ) => {
+
+    const { score } = await api.getScore(address)
+    return {
+      score
+    }
   }
 
 }
