@@ -8,9 +8,9 @@ This guide explains how to integrate **bringid-sdk** into a **Next.js App Router
 
 Install the SDK using Yarn:
 
-+++bash
+```bash
 yarn add bringid-sdk
-+++
+```
 
 ---
 
