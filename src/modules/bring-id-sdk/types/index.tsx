@@ -1,9 +1,9 @@
 import TCheckExtensionStatus from './check-extension-status'
 import TVerifyHumanity from './verify-humanity'
-import TRequestScore from './request-score'
+import TGetAddressScore from './get-address-score'
 
 export {
   TCheckExtensionStatus,
   TVerifyHumanity,
-  TRequestScore
+  TGetAddressScore
 }

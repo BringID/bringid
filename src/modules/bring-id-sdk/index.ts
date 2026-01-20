@@ -2,7 +2,7 @@ import { generateId } from "@/utils"
 import { TRequestType, TRequest, TResponse, TSemaphoreProof } from "@/types"
 import {
   TVerifyHumanity,
-  TRequestScore
+  TGetAddressScore
 } from "./types" 
 import api from "@/api";
 
@@ -81,7 +81,7 @@ export class BringID {
     return this.request<{ proofs: TSemaphoreProof[], points: number }>("PROOFS_REQUEST", payload);
   }
 
-  requestScore: TRequestScore = async (
+  getAddressScore: TGetAddressScore = async (
     address
   ) => {
 

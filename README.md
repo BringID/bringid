@@ -1,123 +1,83 @@
-# BringID Modal SDK 0.0.19 – Next.js Integration Guide
+# BringID SDK
 
-This guide explains how to integrate **bringid-sdk** into a **Next.js App Router** application, including verifying humanity and requesting score.
-
----
+Verify humanity and request reputation scores in your Next.js app.
 
 ## Installation
 
-Install the SDK using Yarn:
-
 ```bash
-yarn add bringid-sdk
+npm install bringid
 ```
 
----
+## Quick Start
+
+```ts
+import { BringID } from "bringid";
+
+const bringid = new BringID();
+
+// Get a reputation score (0-100) — works immediately
+const { score } = await bringid.getAddressScore("0x...");
+
+// Verify humanity and get proofs — requires modal setup (see below)
+const { proofs, points } = await bringid.verifyHumanity();
+```
+
+> **Note:** `getAddressScore` works out of the box. `verifyHumanity` requires the modal provider — see [Setup](#setup) below.
 
 ## Requirements
 
 - Next.js 13+ (App Router)
 - React 18+
-- Client-side wallet integration (e.g. Wagmi, Ethers)
-- App Router enabled (`app/` directory)
+- Wallet provider (wagmi, ethers, etc.)
 
----
+## Setup
 
-## Overview
+### 1. Create the SDK instance
 
-The BringID SDK works by:
+Create a shared instance to use across your app:
 
-1. SDK initialization
-2. Exposing SDK methods (`verifyHumanity`, `requestScore`)
-3. Rendering a global BringID modal (ONLY for `verifyHumanity` method to interact with BringIDModal)
-4. Allowing interaction from client components
+```ts
+// lib/bringid.ts
+import { BringID } from "bringid";
 
----
-
-## SDK initialization
-
-Create an sdk instance
-
-```tsx
-import { BringID } from "bringid-sdk";
-const sdk = new BringID();
+export const bringid = new BringID();
 ```
 
-## SDK methods
+### 2. Add the Modal Provider
 
-When the sdk is ready you can use methods to request address score (`requestScore`) and to verify humanity (`verifyHumanity`)
-
-### sdk.requestScore method
+The `verifyHumanity` method requires a modal. Render it once at the root of your app:
 
 ```tsx
-const { score } = await sdk.requestScore("0x..."); // address is a required param
-console.log(score); // `score` is a number between 0 and 100
-```
-
-### sdk.verifyHumanity method
-
-To use it correctly, you must:
-
-- Create a **Modal Provider**
-- Wrap it in your **Root Layout**
-- Call `sdk.verifyHumanity` from **Client Components only**
-
-#### 1. Create Modal Provider
-
-Create a client-side provider that renders the verification dialog once.
-
-**`@/app/providers/ModalProvider.tsx`**
-
-```tsx
+// app/providers/BringIDProvider.tsx
 "use client";
 
-import { BringIDModal } from "bringid-sdk";
-import React from "react";
+import { BringIDModal } from "bringid";
+import { useAccount, useWalletClient } from "wagmi";
 
-type Props = {
-  children: React.ReactNode;
-};
-
-export default function ModalProvider({ children }: Props) {
-  // Replace with actual wallet data (wagmi, ethers, etc.)
-  const address: string | undefined = undefined;
-  const signer: any = null;
+export function BringIDProvider({ children }: { children: React.ReactNode }) {
+  const { address } = useAccount();
+  const { data: walletClient } = useWalletClient();
 
   return (
     <>
-      {signer ? (
+      {walletClient && (
         <BringIDModal
           address={address}
-          iframeOnLoad={() => {
-            console.log("modal window is ready to use. iframe is fully loaded");
-          }}
-          generateSignature={async (value: string) =>
-            await signer.signMessage(value)
-          }
+          generateSignature={(message) => walletClient.signMessage({ message })}
+          onLoad={() => console.log("BringID ready")}
         />
-      ) : null}
+      )}
       {children}
     </>
   );
 }
 ```
 
-##### Notes
-
-- Render `BringIDModal` only once in the app
-- `address` and signer in the `generateSignature` callback should come from your wallet provider (wagmi, etc.)
-- **IMPORTANT: use `mode="dev"` property to enable dev mode. Otherwise `production` mode is enabled by default**
-
----
-
-#### 2. Wrap Root Layout
-
-Wrap your app with the modal provider in `RootLayout`.
-
-**`@/app/layout.tsx`**
+### 3. Wrap your layout
 
 ```tsx
-import ModalProvider from "@/app/providers/ModalProvider";
+// app/layout.tsx
+import { BringIDProvider } from "./providers/BringIDProvider";
 
 export default function RootLayout({
   children,
@@ -126,15 +86,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"
-        />
-      </head>
       <body>
         <WagmiProvider>
-          <ModalProvider>{children}</ModalProvider>
+          <BringIDProvider>{children}</BringIDProvider>
         </WagmiProvider>
       </body>
     </html>
@@ -142,120 +96,92 @@ export default function RootLayout({
 }
 ```
 
----
+## API
 
-#### 3. Call verifyHumanity SDK Method
+### `bringid.getAddressScore(address)`
 
-When the modal window is fully rendered you can use `sdk.verifyHumanity` method
+Returns a reputation score for any address. No wallet connection required.
 
-```tsx
-const { proofs, points } = await sdk.verifyHumanity();
-console.log(
-  proofs, // array of semaphore proofs
-  points, // amount of points
-);
+```ts
+const { score } = await bringid.getAddressScore("0x...");
+// score: number (0-100)
 ```
 
-Also you can use `scope` option. It can be presented as a string if specific scope needed. By default the scope will be computed from registry address
+### `bringid.verifyHumanity(options?)`
 
-```tsx
-const { proofs, points } = await sdk.verifyHumanity({
-  scope: "0x....",
+Opens the verification modal and returns proofs. Requires the modal provider to be mounted.
+
+```ts
+const { proofs, points } = await bringid.verifyHumanity();
+
+// With custom scope
+const { proofs, points } = await bringid.verifyHumanity({
+  scope: "0x...",
 });
-
-console.log(
-  proofs, // array of semaphore proofs
-  points, // amount of points
-);
 ```
 
-That method should be called from **Client Components**.
+**Returns:**
 
----
+- `proofs` — Array of semaphore proofs
+- `points` — Humanity points earned
 
-#### Example: Verify humanity
+## Configuration
 
-**`@/app/utils/sdk.tsx`**
+### Development Mode
+
+Use `mode="dev"` on the modal for testing:
 
 ```tsx
-import { BringID } from "bringid-sdk";
-
-const initSDK = (() => {
-  let sdk: null | BringID = null;
-
-  return () => {
-    if (!sdk) {
-      const newSDK = new BringID();
-      sdk = newSDK;
-
-      return sdk;
-    }
-
-    return sdk;
-  };
-})();
-
-export default initSDK;
+<BringIDModal
+  mode="dev"
+  address={address}
+  generateSignature={(message) => walletClient.signMessage({ message })}
+/>
 ```
 
-**`@/app/components/main.tsx`**
+> **Note:** Production mode is enabled by default. Only use `dev` mode during development.
+
+## Example
 
 ```tsx
 "use client";
 
-import { FC, useState } from "react";
-import initSDK from "@/app/utils/sdk.tsx";
+import { useState } from "react";
+import { bringid } from "@/lib/bringid";
 
-type Props = {
-  setStage?: (stage: string) => void;
-};
+export function VerifyButton() {
+  const [points, setPoints] = useState<number | null>(null);
 
-const Main: FC<Props> = ({ setStage }) => {
-  const [points, setPoints] = useState<number>(0);
+  const handleVerify = async () => {
+    try {
+      const { points } = await bringid.verifyHumanity();
+      setPoints(points);
+    } catch (err) {
+      console.error("Verification failed:", err);
+    }
+  };
 
   return (
     <div>
-      <h1>Humanity points: {points}</h1>
-      <button
-        onClick={async () => {
-          try {
-            const sdk = initSDK();
-            const { points } = await sdk.verifyHumanity();
-
-            setPoints(points);
-          } catch (err) {
-            console.error(err);
-          }
-        }}
-      >
-        Verify humanity
-      </button>
+      <button onClick={handleVerify}>Verify Humanity</button>
+      {points !== null && <p>Points: {points}</p>}
     </div>
   );
-};
-
-export default Main;
+}
 ```
-
----
-
-## Best Practices
-
-- Ensure wallet is connected before requesting proofs
-- Avoid rendering the modal multiple times
-- For large proof objects, consider collapsing or lazy rendering
-
----
 
 ## Troubleshooting
 
-### Modal does not open
+**Modal doesn't open**
 
-- Ensure `ModalProvider` is rendered in `layout.tsx`
-- Ensure `'use client'` is present
+- Ensure `BringIDProvider` is in your layout
+- Ensure the component calling `verifyHumanity` has `"use client"`
+- Ensure wallet is connected before calling
 
----
+**Score returns undefined**
+
+- Verify the address format is correct (checksummed)
 
 ## License
 
-Refer to the BringID SDK license and documentation for details.
+MIT
