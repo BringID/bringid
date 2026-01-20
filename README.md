@@ -39,8 +39,8 @@ The BringID SDK works by:
 Create an sdk instance
 
 ```tsx
-import { BringIDSDK } from "bringid-sdk";
-const sdk = new BringIDSDK();
+import { BringID } from "bringid-sdk";
+const sdk = new BringID();
 ```
 
 ## SDK methods
@@ -85,17 +85,17 @@ export default function ModalProvider({ children }: Props) {
 
   return (
     <>
-      <BringIDModal
-        address={address}
-        iframeOnLoad={() => {
-          console.log("modal window is ready to use. iframe is fully loaded");
-        }}
-        generateSignature={
-          signer
-            ? async (value: string) => await signer.signMessage(value)
-            : undefined
-        }
-      />
+      {signer ? (
+        <BringIDModal
+          address={address}
+          iframeOnLoad={() => {
+            console.log("modal window is ready to use. iframe is fully loaded");
+          }}
+          generateSignature={async (value: string) =>
+            await signer.signMessage(value)
+          }
+        />
+      ) : null}
       {children}
     </>
   );
@@ -178,14 +178,14 @@ That method should be called from **Client Components**.
 **`@/app/utils/sdk.tsx`**
 
 ```tsx
-import { BringIDSDK } from "bringid-sdk";
+import { BringID } from "bringid-sdk";
 
 const initSDK = (() => {
-  let sdk: null | BringIDSDK = null;
+  let sdk: null | BringID = null;
 
   return () => {
     if (!sdk) {
-      const newSDK = new BringIDSDK();
+      const newSDK = new BringID();
       sdk = newSDK;
 
       return sdk;

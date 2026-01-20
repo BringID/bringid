@@ -6,7 +6,7 @@ import {
 } from "./types" 
 import api from "@/api";
 
-export class BringIDSDK {
+export class BringID {
   private dialogWindowOrigin = ''
 
   private pendingRequests = new Map<
@@ -93,4 +93,4 @@ export class BringIDSDK {
 
 }
 
-export default BringIDSDK
+export default BringID
