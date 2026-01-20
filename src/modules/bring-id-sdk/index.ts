@@ -7,7 +7,7 @@ import {
 import api from "@/api";
 
 export class BringIDSDK {
-  private dialogWindowOrigin = window.location.origin;
+  private dialogWindowOrigin = ''
 
   private pendingRequests = new Map<
     string,
@@ -19,7 +19,10 @@ export class BringIDSDK {
   >();
 
   constructor() {
-    window.addEventListener("message", this.handleMessage);
+    if (typeof window !== "undefined") {
+      window.addEventListener("message", this.handleMessage);
+      this.dialogWindowOrigin = window.location.origin
+    }
   }
 
   /** POSTMESSAGE API */

@@ -3,7 +3,7 @@ import { ThemeProvider } from 'styled-components'
 import { light } from '@/themes'
 import '../../fonts/index.css'
 import { TProps } from './component-types'
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState } from 'react'
 import { useMessageProxy } from '@/hooks'
 import {
   DialogStyled,
@@ -11,8 +11,6 @@ import {
   DialogClassName,
   LoadingScreen
 } from './styled-components'
-import { registerOpenModal } from './events/event-bus'
-import { TSemaphoreProof } from '@/types'
 import { createQueryString } from '@/utils'
 import { Spinner } from '@/components'
 
@@ -29,6 +27,10 @@ export const BringIDModal: React.FC<TProps> = ({
   const [ visible, setVisible ] = useState<boolean>(false)
   const [ isReady, setIsReady ] = useState<boolean>(false)
 
+  if (typeof window === "undefined") {
+    return null
+  }
+
   useMessageProxy(
     isReady,
     iframeRef,
@@ -37,10 +39,6 @@ export const BringIDModal: React.FC<TProps> = ({
     generateSignature
   );
 
-
-  if (typeof window === "undefined") {
-    return null
-  }
 
   const queryParams = createQueryString(
     {
