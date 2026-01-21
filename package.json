@@ -1,6 +1,6 @@
 {
   "name": "bringid",
-  "version": "0.1.0-beta",
+  "version": "0.1.1-beta",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -15,7 +15,7 @@
     "type": "git",
     "url": "git+https://github.com/bringid/bringid-sdk.git"
   },
-  "license": "AGPL3",
+  "license": "MIT",
   "description": "",
   "bugs": {
     "url": "https://github.com/bringid/bringid-sdk/issues"
