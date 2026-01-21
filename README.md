@@ -64,7 +64,7 @@ export function BringIDProvider({ children }: { children: React.ReactNode }) {
         <BringIDModal
           address={address}
           generateSignature={(message) => walletClient.signMessage({ message })}
-          onLoad={() => console.log("BringID ready")}
+          iframeOnLoad={() => console.log("BringID ready")}
         />
       )}
       {children}
