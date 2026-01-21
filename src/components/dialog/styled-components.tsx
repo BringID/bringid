@@ -24,7 +24,6 @@ export const Dialog = styled.div`
   width: 100%;
   background: ${(props) => (props.theme && props.theme.widgetBackgroundColor)};
   border-radius: 20px;
-  border: 1px solid ${(props) => (props.theme && props.theme.primaryBorderColor)};
   padding: 16px;
 
   @media (max-width: ${props => props.theme.mobileBreakpoint}) {
