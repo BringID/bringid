@@ -1,6 +1,5 @@
-type TRequestType = 'CHECK_EXTENSION_STATUS_REQUEST' |
-                    'PROOFS_REQUEST' |
-                    'CHECK_EXTENSION_STATUS_RESPONSE' |
-                    'PROOFS_RESPONSE'
+type TRequestType = 'PROOFS_REQUEST' |
+                    'PROOFS_RESPONSE' |
+                    'CLOSE_MODAL'
 
 export default TRequestType

@@ -12,6 +12,8 @@ const theme = {
   overlayBackgroundColor: 'rgba(255, 255, 255, .9)',
   messageBackgroundColor: 'rgba(244, 244, 245, 0.3)',
 
+  highlightColor: '#6B43F4',
+
   additionalTextColor: 'rgb(156, 163, 175)',
 
   buttonActionTextColor: '#FFF',

@@ -1,22 +1,29 @@
-import { useEffect } from "react";
+import { useEffect } from "react"
+import { TGenerateSignature, TSemaphoreProof } from "@/types"
 
 function useMessageProxy(
+  isReady: boolean,
   iframeRef,
   connectUrl: string,
-  onLogin?: () => void,
-  onLogout?: () => void
+  setVisible: (visible: boolean) => void,
+  generateSignature?: TGenerateSignature
 ) {
   useEffect(() => {
-    function onMessage(event: MessageEvent) {
+    async function onMessage(event: MessageEvent) {
       const fromOrigin = event.origin;
       const data = event.data;
-      console.log('useMessageProxy: ', {
-        data,
-        fromOrigin
-      })
-      // From WEBSITE SDK → forward to iframe
+
+      // From WEBSITE where CURRENT SDK is used → forward to iframe WIDGET
       if (fromOrigin === window.location.origin) {
+
         if (!iframeRef.current) return;
+
+        if (data.type === 'PROOFS_REQUEST') {
+          if (!isReady) {
+            return alert('Modal window is not ready yet')
+          }
+          setVisible(true)
+        }
 
         iframeRef.current.contentWindow?.postMessage(
           data,
@@ -25,19 +32,37 @@ function useMessageProxy(
         return;
       }
 
-      // From CONNECT iframe → forward to SDK
+      // From WIDGET iframe → forward to CURRENT SDK
       if (fromOrigin === connectUrl) {
-        console.log('fromOrigin === connectUrl: ', { data })
-        if (data.type === 'LOGIN') {
-          onLogin && onLogin()
-          return
+
+        if (data.type === 'GENERATE_USER_KEY') {
+          if (generateSignature) {
+            const signature = await generateSignature(data.payload.message)
+
+            // send back to iframe
+            iframeRef.current.contentWindow?.postMessage(
+              {
+                type: 'USER_KEY_READY',
+                payload: {
+                  signature
+                }
+              },
+              connectUrl
+            )
+            return
+          } else {
+            return alert('generateSignature IS NOT AVAILABLE')
+          } 
         }
 
-        if (data.type === 'LOGOUT') {
-          onLogout && onLogout()
-          return
+        if (
+          data.type === 'CLOSE_MODAL' ||
+          data.type === 'PROOFS_RESPONSE'
+        ) {
+          setVisible(false)
         }
 
+        // proxy to WEBSITE where CURRENT SDK is used
         window.postMessage(data, window.location.origin);
         return;
       }
@@ -45,7 +70,10 @@ function useMessageProxy(
 
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, []);
+  }, [
+    generateSignature,
+    isReady
+  ]);
 }
 
 export default useMessageProxy

@@ -1,97 +1,83 @@
-# BringID Modal SDK 0.0.18 – Next.js Integration Guide
+# BringID SDK
 
-This guide explains how to integrate **bringid-sdk** into a **Next.js App Router** application, including modal setup and requesting proofs.
-
----
+Verify humanity and request reputation scores in your Next.js app.
 
 ## Installation
 
-Install the SDK using Yarn:
+```bash
+npm install bringid
+```
 
-+++bash
-yarn add bringid-sdk@^0.0.14
-+++
+## Quick Start
 
----
+```ts
+import { BringID } from "bringid";
+
+const bringid = new BringID();
+
+// Get a reputation score (0-100) — works immediately
+const { score } = await bringid.getAddressScore("0x...");
+
+// Verify humanity and get proofs — requires modal setup (see below)
+const { proofs, points } = await bringid.verifyHumanity();
+```
+
+> **Note:** `getAddressScore` works out of the box. `verifyHumanity` requires the modal provider — see [Setup](#setup) below.
 
 ## Requirements
 
 - Next.js 13+ (App Router)
 - React 18+
-- Client-side wallet integration (e.g. Wagmi, Ethers)
-- App Router enabled (`app/` directory)
+- Wallet provider (wagmi, ethers, etc.)
 
----
+## Setup
 
-## Overview
+### 1. Create the SDK instance
 
-The BringID SDK works by:
+Create a shared instance to use across your app:
 
-1. Rendering a global verification modal
-2. Exposing SDK methods (`openModal`)
-3. Allowing interaction from client components
+```ts
+// lib/bringid.ts
+import { BringID } from "bringid";
 
-To use it correctly, you must:
+export const bringid = new BringID();
+```
 
-- Create a **Modal Provider**
-- Wrap it in your **Root Layout**
-- Call SDK methods from **Client Components only**
+### 2. Add the Modal Provider
 
----
-
-## 1. Create Modal Provider
-
-Create a client-side provider that renders the verification dialog once.
-
-**`components/ModalProvider.tsx`**
+The `verifyHumanity` method requires a modal. Render it once at the root of your app:
 
 ```tsx
+// app/providers/BringIDProvider.tsx
 "use client";
 
-import { VerificationsDialog } from "bringid-sdk";
-import React from "react";
+import { BringIDModal } from "bringid";
+import { useAccount, useWalletClient } from "wagmi";
 
-type Props = {
-  children: React.ReactNode;
-};
-
-export default function ModalProvider({ children }: Props) {
-  // Replace with actual wallet data (wagmi, ethers, etc.)
-  const address: string | null = null;
-  const signer: any = null;
+export function BringIDProvider({ children }: { children: React.ReactNode }) {
+  const { address } = useAccount();
+  const { data: walletClient } = useWalletClient();
 
   return (
     <>
-      <VerificationsDialog
-        address={address || undefined}
-        generateSignature={
-          signer
-            ? async (value: string) => await signer.signMessage(value)
-            : undefined
-        }
-      />
+      {walletClient && (
+        <BringIDModal
+          address={address}
+          generateSignature={(message) => walletClient.signMessage({ message })}
+          onLoad={() => console.log("BringID ready")}
+        />
+      )}
       {children}
     </>
   );
 }
 ```
 
-### Notes
-
-- Render `VerificationsDialog` only once in the app
-- `address` and `signer` should come from your wallet provider
-
----
-
-## 2. Wrap Root Layout
-
-Wrap your app with the modal provider in `RootLayout`.
-
-**`app/layout.tsx`**
+### 3. Wrap your layout
 
 ```tsx
-import ModalProvider from "@/components/ModalProvider";
-import styles from "./page.module.css";
+// app/layout.tsx
+import { BringIDProvider } from "./providers/BringIDProvider";
 
 export default function RootLayout({
   children,
@@ -100,15 +86,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"
-        />
-      </head>
-      <body className={styles.page}>
+      <body>
         <WagmiProvider>
-          <ModalProvider>{children}</ModalProvider>
+          <BringIDProvider>{children}</BringIDProvider>
         </WagmiProvider>
       </body>
     </html>
@@ -116,80 +96,92 @@ export default function RootLayout({
 }
 ```
 
----
+## API
 
-## 3. Using SDK Methods
+### `bringid.getAddressScore(address)`
 
-The SDK exposes the following client-side method:
+Returns a reputation score for any address. No wallet connection required.
 
-`openModal ( proofsGeneratedCallback, scope )` – opens the verification modal
+```ts
+const { score } = await bringid.getAddressScore("0x...");
+// score: number (0-100)
+```
 
-- proofsGeneratedCallback - required. Should be presented as a callback with two arguments: proofs (array of semaphore proofs) points (amount of points for seleceted array of proofs)
+### `bringid.verifyHumanity(options?)`
 
-- scope - NOT required. Should be presented as a string if specific scope needed. By default the scope will be computed from registry address
+Opens the verification modal and returns proofs. Requires the modal provider to be mounted.
 
-That method should be called from **Client Components**.
+```ts
+const { proofs, points } = await bringid.verifyHumanity();
 
----
+// With custom scope
+const { proofs, points } = await bringid.verifyHumanity({
+  scope: "0x...",
+});
+```
 
-## Example: Open Modal
+**Returns:**
 
-**`components/CreateID.tsx`**
+- `proofs` — Array of semaphore proofs
+- `points` — Humanity points earned
+
+## Configuration
+
+### Development Mode
+
+Use `mode="dev"` on the modal for testing:
+
+```tsx
+<BringIDModal
+  mode="dev"
+  address={address}
+  generateSignature={(message) => walletClient.signMessage({ message })}
+/>
+```
+
+> **Note:** Production mode is enabled by default. Only use `dev` mode during development.
+
+## Example
 
 ```tsx
 "use client";
 
-import { FC, useState } from "react";
-import { openModal, requestProofs } from "bringid-sdk";
+import { useState } from "react";
+import { bringid } from "@/lib/bringid";
 
-type Props = {
-  setStage?: (stage: string) => void;
-};
+export function VerifyButton() {
+  const [points, setPoints] = useState<number | null>(null);
 
-const CreateID: FC<Props> = ({ setStage }) => {
-  const [proofs, setProofs] = useState<any>(null);
+  const handleVerify = async () => {
+    try {
+      const { points } = await bringid.verifyHumanity();
+      setPoints(points);
+    } catch (err) {
+      console.error("Verification failed:", err);
+    }
+  };
 
   return (
     <div>
-
-      <button
-        onClick={() => {
-          openModal(
-            proofsGeneratedCallback: (proofs, points) => {
-              setProofs(proofs)
-            }
-          );
-        }}
-      >
-        Open popup
-      </button>
-
+      <button onClick={handleVerify}>Verify Humanity</button>
+      {points !== null && <p>Points: {points}</p>}
     </div>
   );
-};
-
-export default CreateID;
+}
 ```
-
----
-
-## Best Practices
-
-- Ensure wallet is connected before requesting proofs
-- Avoid rendering the modal multiple times
-- For large proof objects, consider collapsing or lazy rendering
-
----
 
 ## Troubleshooting
 
-### Modal does not open
+**Modal doesn't open**
 
-- Ensure `ModalProvider` is rendered in `layout.tsx`
-- Ensure `'use client'` is present
+- Ensure `BringIDProvider` is in your layout
+- Ensure the component calling `verifyHumanity` has `"use client"`
+- Ensure wallet is connected before calling
 
----
+**Score returns undefined**
+
+- Verify the address format is correct (checksummed)
 
 ## License
 
-Refer to the BringID SDK license and documentation for details.
+MIT

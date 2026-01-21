@@ -5,6 +5,8 @@ import TRequestType from "./request-type"
 import TRequest from './request'
 import TResponse from './response'
 import TGenerateSignature from './generate-signature'
+import TTask from "./task"
+import TVerificationData from './verification-data'
 export { TTaskGroupCheck } from './task-group-check'
 export { TTaskGroup } from './task-group'
 
@@ -32,5 +34,7 @@ export {
   TRequestType,
   TRequest,
   TGenerateSignature,
-  TResponse
+  TResponse,
+  TTask,
+  TVerificationData
 }

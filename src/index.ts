@@ -1,13 +1,7 @@
-import BringIDRequestsSDK from './modules/bring-id-requests-sdk'
-import ConnectDialog from './modules/connect-dialog'
-import BringIDExtensionSDK from './modules/bring-id-extension-sdk'
-import VerificationsDialog from './modules/verifications-dialog'
-import { openModal } from './modules/verifications-dialog/events/event-bus'
+import BringID from './modules/bring-id-sdk'
+import BringIDModal from './modules/bring-id-modal'
 
 export {
-  BringIDRequestsSDK,
-  ConnectDialog,
-  BringIDExtensionSDK,
-  VerificationsDialog,
-  openModal
+  BringID,
+  BringIDModal
 }
