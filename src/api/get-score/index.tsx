@@ -1,6 +1,10 @@
+import { TScoreMessage } from "@/types"
+
 type TGetScoreResponse = Promise<{
   success: boolean,
-  score: number
+  score: number,
+  signature: string,
+  message: TScoreMessage
 }>
 
 type TGetScore = (

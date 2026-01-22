@@ -7,6 +7,7 @@ import TResponse from './response'
 import TGenerateSignature from './generate-signature'
 import TTask from "./task"
 import TVerificationData from './verification-data'
+import TScoreMessage from "./score-message"
 export { TTaskGroupCheck } from './task-group-check'
 export { TTaskGroup } from './task-group'
 
@@ -36,5 +37,6 @@ export {
   TGenerateSignature,
   TResponse,
   TTask,
-  TVerificationData
+  TVerificationData,
+  TScoreMessage
 }

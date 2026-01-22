@@ -1,6 +1,7 @@
 import { TSemaphoreProof } from "@/types"
 
 type TArgs = {
+  minPoints?: number;
   scope?: string;
 }
 
