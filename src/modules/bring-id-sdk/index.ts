@@ -77,17 +77,29 @@ export class BringID {
   }
 
   /** PUBLIC METHODS */
-  verifyHumanity: TVerifyHumanity = async (payload) => {
+  verifyHumanity: TVerifyHumanity = async (payload = {}) => {
+    if (!payload.minPoints) {
+      payload = { ...payload, minPoints: 0 }
+    }
     return this.request<{ proofs: TSemaphoreProof[], points: number }>("PROOFS_REQUEST", payload);
   }
 
   getAddressScore: TGetAddressScore = async (
     address
   ) => {
+    if (!address) {
+      throw new Error('`address` argument is required to get address score')
+    }
+    const {
+      score,
+      message,
+      signature
+    } = await api.getScore(address)
 
-    const { score } = await api.getScore(address)
     return {
-      score
+      score,
+      message,
+      signature
     }
   }
 
