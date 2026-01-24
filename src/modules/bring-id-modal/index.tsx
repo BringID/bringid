@@ -20,6 +20,7 @@ export const BringIDModal: React.FC<TProps> = ({
   generateSignature,
   iframeOnLoad,
   mode = 'production',
+  highlightColor,
   connectUrl = 'https://widget.bringid.org'
 }) => {
 
@@ -45,7 +46,8 @@ export const BringIDModal: React.FC<TProps> = ({
       url: encodeURIComponent(window.location.href),
       apiKey,
       address,
-      mode
+      mode,
+      highlightColor
     }
   )
 
