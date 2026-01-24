@@ -7,4 +7,5 @@ export type TProps = {
   connectUrl?: string
   iframeOnLoad?: () => void
   mode?: 'dev' | 'production'
+  highlightColor?: string
 }
