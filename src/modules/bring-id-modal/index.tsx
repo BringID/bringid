@@ -47,7 +47,7 @@ export const BringIDModal: React.FC<TProps> = ({
       apiKey,
       address,
       mode,
-      highlightColor: highlightColor ? encodeURIComponent(highlightColor) : '#000'
+      highlightColor: highlightColor ? encodeURIComponent(highlightColor) : encodeURIComponent('#000')
     }
   )
 
