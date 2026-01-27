@@ -1,6 +1,6 @@
 {
   "name": "bringid",
-  "version": "0.1.5-beta",
+  "version": "0.1.6-beta-rc.2",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [

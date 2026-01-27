@@ -8,4 +8,5 @@ export type TProps = {
   iframeOnLoad?: () => void
   mode?: 'dev' | 'production'
   highlightColor?: string
+  theme?: 'light' | 'dark'
 }

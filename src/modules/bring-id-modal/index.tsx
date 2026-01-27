@@ -21,6 +21,7 @@ export const BringIDModal: React.FC<TProps> = ({
   iframeOnLoad,
   mode = 'production',
   highlightColor,
+  theme = 'light',
   connectUrl = 'https://widget.bringid.org'
 }) => {
 
@@ -47,7 +48,8 @@ export const BringIDModal: React.FC<TProps> = ({
       apiKey,
       address,
       mode,
-      highlightColor: highlightColor ? encodeURIComponent(highlightColor) : encodeURIComponent('#000')
+      theme,
+      highlightColor: highlightColor ? encodeURIComponent(highlightColor) : undefined
     }
   )
 
