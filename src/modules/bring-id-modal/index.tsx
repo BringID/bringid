@@ -69,7 +69,7 @@ export const BringIDModal: React.FC<TProps> = ({
           <Spinner size='large' />
         </LoadingScreen>}
         <IFrame
-          sandbox="allow-scripts allow-same-origin allow-forms"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
           ref={iframeRef}
           src={iframeSrc}
           onLoad={() => {
