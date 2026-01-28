@@ -6,6 +6,8 @@ import api from './api';
 import createQueryString from './create-query-string';
 import msToTime from './ms-to-time';
 import defineExplorerURL from './define-explorer-url';
+import isValidInboundMessage from './validate-inbound-message';
+import isValidOutboundMessage from './validate-outbound-message';
 
 export {
   generateId,
@@ -14,5 +16,7 @@ export {
   msToTime,
   defineApiUrl,
   api,
-  createQueryString
+  createQueryString,
+  isValidInboundMessage,
+  isValidOutboundMessage
 }

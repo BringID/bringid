@@ -8,6 +8,22 @@ import TGenerateSignature from './generate-signature'
 import TTask from "./task"
 import TVerificationData from './verification-data'
 import TScoreMessage from "./score-message"
+import {
+  TOutboundMessage,
+  TProofsRequestMessage,
+  TUserKeyReadyMessage
+} from './outbound-message'
+import {
+  TCloseModalMessage,
+  TGenerateUserKeyMessage,
+  TInboundMessage,
+  TProofsResponseMessage
+} from './inbound-message'
+import {
+  TInboundMessageType,
+  TMessage,
+  TOutboundMessageType
+} from './message'
 export { TTaskGroupCheck } from './task-group-check'
 export { TTaskGroup } from './task-group'
 
@@ -29,7 +45,18 @@ export type { TVerifyResult } from './verify-result';
 
 
 export {
+  TOutboundMessage,
+  TProofsRequestMessage,
+  TUserKeyReadyMessage,
   TSemaphoreProof,
+  TCloseModalMessage,
+  TGenerateUserKeyMessage,
+  TInboundMessage,
+
+  TInboundMessageType,
+  TMessage,
+  TOutboundMessageType,
+  TProofsResponseMessage,
   TExtensionStatus,
   TErrorType,
   TRequestType,

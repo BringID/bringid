@@ -1,14 +1,21 @@
 import { generateId } from "@/utils"
-import { TRequestType, TRequest, TResponse, TSemaphoreProof } from "@/types"
+import {
+  TRequestType,
+  TRequest,
+  TResponse,
+  TSemaphoreProof
+} from "@/types"
 import {
   TVerifyHumanity,
-  TGetAddressScore
+  TGetAddressScore,
+  TDestroy
 } from "./types" 
-import api from "@/api";
+import api from "@/api"
 
 export class BringID {
   private dialogWindowOrigin = ''
-
+  private isDestroyed = false
+  
   private pendingRequests = new Map<
     string,
     {
@@ -25,9 +32,17 @@ export class BringID {
     }
   }
 
+  destroy: TDestroy = () => {
+    if (this.isDestroyed) return
+    this.isDestroyed = true
+    if (typeof window !== "undefined") {
+      window.removeEventListener("message", this.handleMessage)
+    }
+    this.rejectAllPendingRequests('DESTROYED')
+  }
+
   /** POSTMESSAGE API */
   private sendMessageToDialog(msg: TRequest) {
-    console.log('sendMessageToDialog: ', { msg, dialogWindowOrigin: this.dialogWindowOrigin })
     window.postMessage(msg, this.dialogWindowOrigin);
   }
 
@@ -49,7 +64,6 @@ export class BringID {
     if (!pending) return;
 
     // i have pending request, that should not be captured
-
     if (pending.requestType === data.type) { return }
 
     this.pendingRequests.delete(data.requestId);
