@@ -1,20 +1,28 @@
-import { generateId } from "@/utils"
+import { fetchRegistryConfig, generateId } from "@/utils"
 import {
   TRequestType,
   TRequest,
   TResponse,
-  TSemaphoreProof
+  TSemaphoreProof,
+  TCall3,
+  TMode
 } from "@/types"
 import {
   TVerifyHumanity,
   TGetAddressScore,
-  TDestroy
+  TDestroy,
+  TVerifyProofs,
+  TConstructorArgs
 } from "./types" 
 import api from "@/api"
+import { REGISTRY_ABI, MULTICALL3_ABI } from "@/abi"
+import { ethers } from 'ethers'
+import configs from "@/configs"
 
 export class BringID {
   private dialogWindowOrigin = ''
   private isDestroyed = false
+  private mode: TMode = 'production'
   
   private pendingRequests = new Map<
     string,
@@ -25,10 +33,14 @@ export class BringID {
     }
   >();
 
-  constructor() {
+  constructor(args?: TConstructorArgs) {
     if (typeof window !== "undefined") {
       window.addEventListener("message", this.handleMessage);
       this.dialogWindowOrigin = window.location.origin
+    }
+
+    if (args && args.mode) {
+      this.mode = args.mode
     }
   }
 
@@ -114,6 +126,72 @@ export class BringID {
       score,
       message,
       signature
+    }
+  }
+
+
+  verifyProofs: TVerifyProofs = async ({
+    proofs,
+    provider
+  }) => {
+
+
+    const registryConfig = await fetchRegistryConfig(this.mode)
+
+    if (!registryConfig) {
+      throw new Error('configs cannot be fetched')
+    }
+
+    const registryInterface = new ethers.Interface(REGISTRY_ABI)
+    const multicall3Interface = new ethers.Interface(MULTICALL3_ABI)
+
+    if (!provider) {
+      const {
+        result
+      } = await api.verifyProofs(
+        proofs,
+        registryConfig.REGISTRY
+      )
+
+      return result
+    }
+
+    // Build multicall data
+    const calls: TCall3[] = proofs.map((proof) => {
+      const credentialGroupProof = {
+        credentialGroupId: proof.credential_group_id,
+        semaphoreProof: {
+          merkleTreeDepth: proof.semaphore_proof.merkle_tree_depth,
+          merkleTreeRoot: proof.semaphore_proof.merkle_tree_root,
+          nullifier: proof.semaphore_proof.nullifier,
+          message: proof.semaphore_proof.message,
+          scope: proof.semaphore_proof.scope,
+          points: proof.semaphore_proof.points
+        }
+      }
+
+      const callData = registryInterface.encodeFunctionData('verifyProof', [
+        credentialGroupProof
+      ])
+
+      return {
+        target: registryConfig.REGISTRY,
+        allowFailure: false,
+        callData
+      }
+    })
+
+    const multicallData = multicall3Interface.encodeFunctionData('aggregate3', [calls])
+
+    try {
+      await provider.call({
+        to: configs.MULTICALL3_ADDRESS,
+        data: multicallData
+      })
+      return true
+    } catch (err) {
+      console.error(err)
+      return false
     }
   }
 

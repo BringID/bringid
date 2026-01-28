@@ -1,11 +1,11 @@
-import { TGenerateSignature } from "@/types"
+import { TGenerateSignature, TMode } from "@/types"
 
 export type TProps = {
   address?: string
   generateSignature?: TGenerateSignature
   connectUrl?: string
   iframeOnLoad?: () => void
-  mode?: 'dev' | 'production'
+  mode?: TMode,
   highlightColor?: string
   theme?: 'light' | 'dark'
 }
