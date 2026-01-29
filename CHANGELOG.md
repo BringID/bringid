@@ -1,5 +1,9 @@
 # BringID
 
+## 0.2.0-beta
+
+- Added dev.widget support
+
 ## 0.1.7-beta
 
 - Node.js support - SDK can now be used in Node.js environments without React dependency
