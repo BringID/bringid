@@ -1,7 +1,3 @@
-import BringID from './modules/bring-id-sdk'
-import BringIDModal from './modules/bring-id-modal'
+ import BringID from './modules/bring-id-sdk'
 
-export {
-  BringID,
-  BringIDModal
-}
+export { BringID }

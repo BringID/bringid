@@ -1,5 +1,6 @@
 import { useEffect } from "react"
-import { TGenerateSignature, TSemaphoreProof } from "@/types"
+import { TGenerateSignature, TInboundMessage } from "@/types"
+import { isValidInboundMessage, isValidOutboundMessage } from "@/utils"
 
 function useMessageProxy(
   isReady: boolean,
@@ -9,6 +10,11 @@ function useMessageProxy(
   generateSignature?: TGenerateSignature
 ) {
   useEffect(() => {
+
+    if (typeof window === "undefined") return
+
+    const widgetOrigin = new URL(connectUrl).origin
+  
     async function onMessage(event: MessageEvent) {
       const fromOrigin = event.origin;
       const data = event.data;
@@ -17,6 +23,11 @@ function useMessageProxy(
       if (fromOrigin === window.location.origin) {
 
         if (!iframeRef.current) return;
+
+        // Validate outbound message structure
+        if (!isValidOutboundMessage(data)) {
+          return
+        }
 
         if (data.type === 'PROOFS_REQUEST') {
           if (!isReady) {
@@ -27,17 +38,33 @@ function useMessageProxy(
 
         iframeRef.current.contentWindow?.postMessage(
           data,
-          connectUrl
+          widgetOrigin
         );
         return;
       }
 
       // From WIDGET iframe → forward to CURRENT SDK
-      if (fromOrigin === connectUrl) {
+      if (fromOrigin === widgetOrigin) {
 
-        if (data.type === 'GENERATE_USER_KEY') {
+        // Validate inbound message structure
+        if (!isValidInboundMessage(data)) {
+          console.error('Invalid inbound message structure from widget')
+          return
+        }
+
+        const validData = data as TInboundMessage
+
+        if (validData.type === 'GENERATE_USER_KEY') {
           if (generateSignature) {
-            const signature = await generateSignature(data.payload.message)
+            const message = validData.payload.message
+
+            const EXPECTED_CONTENT = 'BringID key'
+            if (!message.includes(EXPECTED_CONTENT)) {
+              console.error('Invalid signature request: message must contain `BringID key`')
+              return
+            }
+
+            const signature = await generateSignature(message)
 
             // send back to iframe
             iframeRef.current.contentWindow?.postMessage(
@@ -52,18 +79,18 @@ function useMessageProxy(
             return
           } else {
             return alert('generateSignature IS NOT AVAILABLE')
-          } 
+          }
         }
 
         if (
-          data.type === 'CLOSE_MODAL' ||
-          data.type === 'PROOFS_RESPONSE'
+          validData.type === 'CLOSE_MODAL' ||
+          validData.type === 'PROOFS_RESPONSE'
         ) {
           setVisible(false)
         }
 
         // proxy to WEBSITE where CURRENT SDK is used
-        window.postMessage(data, window.location.origin);
+        window.postMessage(validData, window.location.origin);
         return;
       }
     }
@@ -72,8 +99,11 @@ function useMessageProxy(
     return () => window.removeEventListener("message", onMessage);
   }, [
     generateSignature,
-    isReady
-  ]);
+    isReady,
+    connectUrl,
+    setVisible,
+    iframeRef
+  ])
 }
 
 export default useMessageProxy

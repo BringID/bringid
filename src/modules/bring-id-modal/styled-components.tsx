@@ -13,6 +13,7 @@ export const DialogStyled = styled(Dialog)<{
 
   .${DialogClassName} {
     max-width: 400px;
+    width: 90%;
     padding: 0px;
     position: relative;
     overflow: hidden;

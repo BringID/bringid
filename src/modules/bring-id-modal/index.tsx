@@ -13,24 +13,26 @@ import {
 } from './styled-components'
 import { createQueryString } from '@/utils'
 import { Spinner } from '@/components'
+import ALLOWED_CONNECT_DOMAINS from '@/configs/allowed-connect-domains'
 
 export const BringIDModal: React.FC<TProps> = ({
-  apiKey,
   address,
   generateSignature,
   iframeOnLoad,
   mode = 'production',
   highlightColor,
+  theme = 'light',
   connectUrl = 'https://widget.bringid.org'
 }) => {
+
+  if (!ALLOWED_CONNECT_DOMAINS.includes(connectUrl)) {
+    console.error(`BringID: Invalid connectUrl "${connectUrl}". Must be one of: ${ALLOWED_CONNECT_DOMAINS.join(', ')}`)
+    return null
+  }
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [ visible, setVisible ] = useState<boolean>(false)
   const [ isReady, setIsReady ] = useState<boolean>(false)
-
-  if (typeof window === "undefined") {
-    return null
-  }
 
   useMessageProxy(
     isReady,
@@ -40,14 +42,18 @@ export const BringIDModal: React.FC<TProps> = ({
     generateSignature
   );
 
+  if (typeof window === "undefined") {
+    return null
+  }
+  
 
   const queryParams = createQueryString(
     {
       url: encodeURIComponent(window.location.href),
-      apiKey,
       address,
       mode,
-      highlightColor: highlightColor ? encodeURIComponent(highlightColor) : encodeURIComponent('#000')
+      theme,
+      highlightColor: highlightColor ? encodeURIComponent(highlightColor) : undefined
     }
   )
 
@@ -63,6 +69,7 @@ export const BringIDModal: React.FC<TProps> = ({
           <Spinner size='large' />
         </LoadingScreen>}
         <IFrame
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
           ref={iframeRef}
           src={iframeSrc}
           onLoad={() => {

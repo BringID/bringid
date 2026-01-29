@@ -1,6 +1,6 @@
 # BringID SDK
 
-Verify humanity and request reputation scores in your Next.js app.
+Verify humanity and request reputation scores in your Next.js or Node.js app.
 
 ## Installation
 
@@ -20,15 +20,25 @@ const { score } = await bringid.getAddressScore("0x...");
 
 // Verify humanity and get proofs — requires modal setup (see below)
 const { proofs, points } = await bringid.verifyHumanity();
+
+// Verify proofs — works immediately
+const isVerified = await bringid.verifyProofs({ proofs: [ ... ]})
+
 ```
 
-> **Note:** `getAddressScore` works out of the box. `verifyHumanity` requires the modal provider — see [Setup](#setup) below.
+> **Note:** `getAddressScore` and `verifyProofs` works out of the box. `verifyHumanity` requires the modal provider — see [Setup](#setup) below.
 
 ## Requirements
+
+**For React/Next.js:**
 
 - Next.js 13+ (App Router)
 - React 18+
 - Wallet provider (wagmi, ethers, etc.)
+
+**For Node.js:**
+
+- Node.js 16+
 
 ## Setup
 
@@ -41,6 +51,7 @@ Create a shared instance to use across your app:
 import { BringID } from "bringid";
 
 export const bringid = new BringID();
+// will return a BringID instance ready for production
 ```
 
 ### 2. Add the Modal Provider
@@ -51,7 +62,7 @@ The `verifyHumanity` method requires a modal. Render it once at the root of your
 // app/providers/BringIDProvider.tsx
 "use client";
 
-import { BringIDModal } from "bringid";
+import { BringIDModal } from "bringid/react";
 import { useAccount, useWalletClient } from "wagmi";
 
 export function BringIDProvider({ children }: { children: React.ReactNode }) {
@@ -104,7 +115,25 @@ Returns a reputation score for any address. No wallet connection required.
 
 ```ts
 const { score } = await bringid.getAddressScore("0x...");
-// score: number (0-100)
+```
+
+**Returns:**
+
+- `score` — number between 0 and 100
+
+### `bringid.verifyProofs({ proofs, provider })`
+
+Returns `true` if proofs are valid. If not -- returns `false`
+
+```ts
+const isVerified = await bringid.verifyProofs({ proofs: [ ... ] });
+// it will check the validity of proofs and return a boolean value
+
+
+const provider = new JsonRpcProvider('https://sepolia.base.org');
+const isVerified = await bringid.verifyProofs({ proofs: [ ... ], provider });
+// it is possible to use a custom JSONRpcProvider for a proofs validity check
+
 ```
 
 ### `bringid.verifyHumanity(options?)`
@@ -144,6 +173,12 @@ Use `mode="dev"` on the modal for testing:
 />
 ```
 
+Also it should be used for BringID instance
+
+```tsx
+const bringid = new BringID({ mode: "dev" });
+```
+
 > **Note:** Production mode is enabled by default. Only use `dev` mode during development.
 
 ## Example
@@ -159,7 +194,7 @@ export function VerifyButton() {
 
   const handleVerify = async () => {
     try {
-      const { points } = await bringid.verifyHumanity();
+      const { points, proofs } = await bringid.verifyHumanity();
       setPoints(points);
     } catch (err) {
       console.error("Verification failed:", err);

@@ -20,8 +20,6 @@
     "declarationMap": true,
     "sourceMap": true,
     "baseUrl": "src",
-    "types": [],
-    "typeRoots": ["./src/@types"],
     "paths": {
       "@/*": ["*"]
     }
