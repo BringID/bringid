@@ -7,6 +7,7 @@ type TVerifyProofsResponse = Promise<{
 
 type TVerifyProofs = (
   proofs: TSemaphoreProof[],
+  chainId: number,
   registryAddress: string
 ) => Promise<TVerifyProofsResponse>
 

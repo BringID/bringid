@@ -44,6 +44,10 @@ export class BringID {
     }
   }
 
+  getMode = () => {
+    return this.mode
+  }
+
   destroy: TDestroy = () => {
     if (this.isDestroyed) return
     this.isDestroyed = true
@@ -146,14 +150,20 @@ export class BringID {
     const multicall3Interface = new ethers.Interface(MULTICALL3_ABI)
 
     if (!provider) {
-      const {
-        result
-      } = await api.verifyProofs(
-        proofs,
-        registryConfig.REGISTRY
-      )
+      try {
+        const {
+          result
+        } = await api.verifyProofs(
+          proofs,
+          Number(registryConfig.CHAIN_ID),
+          registryConfig.REGISTRY
+        )
 
-      return result
+        return result
+      } catch (err) {
+        console.error(err)
+        return false
+      } 
     }
 
     // Build multicall data

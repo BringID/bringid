@@ -5,10 +5,13 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 
 module.exports = {
   mode: "production",
-  entry: "./src/index.ts",
   target: ['web', 'es5'],
+  entry: {
+    index: "./src/index.ts",
+    react: "./src/react-entry.ts",
+  },
   output: {
-    filename: "index.js",
+    filename: "[name].js",
     path: path.resolve(__dirname, 'dist'),
     library: "BringSDK",
     libraryTarget: "umd",

@@ -11,8 +11,7 @@ function api<T>(
         ? undefined
         : JSON.stringify(body),
     headers: {
-      ...headers,
-      'content-type': 'application/json',
+      ...headers
     },
   }).then(async (response) => {
     if (!response.ok) {
