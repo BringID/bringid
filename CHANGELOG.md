@@ -1,5 +1,9 @@
 # BringID
 
+## 0.2.1-beta
+
+- Added minor UI fixes
+
 ## 0.2.0-beta
 
 - Added dev.widget support
