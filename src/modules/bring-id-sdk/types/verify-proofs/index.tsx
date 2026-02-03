@@ -6,6 +6,20 @@ type TArgs = {
   provider?: ethers.JsonRpcProvider
 }
 
-type TVerifyProofs = (payload: TArgs) => Promise<boolean>
+type TCredentialGroupPoints = {
+  credential_group_id: string
+  points: number
+}
+
+type TVerifyProofsResult = {
+  verified: boolean
+  points: {
+    total: number
+    groups: TCredentialGroupPoints[]
+  }
+}
+
+type TVerifyProofs = (payload: TArgs) => Promise<TVerifyProofsResult>
 
 export default TVerifyProofs
+export type { TVerifyProofsResult, TCredentialGroupPoints }

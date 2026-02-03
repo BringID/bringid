@@ -21,8 +21,8 @@ const { score } = await bringid.getAddressScore("0x...");
 // Verify humanity and get proofs — requires modal setup (see below)
 const { proofs, points } = await bringid.verifyHumanity();
 
-// Verify proofs — works immediately
-const isVerified = await bringid.verifyProofs({ proofs: [ ... ]})
+// Verify proofs and get points breakdown — works immediately
+const { verified, points } = await bringid.verifyProofs({ proofs: [ ... ]})
 
 ```
 
@@ -123,18 +123,24 @@ const { score } = await bringid.getAddressScore("0x...");
 
 ### `bringid.verifyProofs({ proofs, provider })`
 
-Returns `true` if proofs are valid. If not -- returns `false`
+Verifies proofs and returns verification status with points breakdown.
 
 ```ts
-const isVerified = await bringid.verifyProofs({ proofs: [ ... ] });
-// it will check the validity of proofs and return a boolean value
-
+const { verified, points } = await bringid.verifyProofs({ proofs: [ ... ] });
+// verified: true/false
+// points: { total: 15, groups: [{ credential_group_id: "16", points: 10 }, ...] }
 
 const provider = new JsonRpcProvider('https://sepolia.base.org');
-const isVerified = await bringid.verifyProofs({ proofs: [ ... ], provider });
+const { verified, points } = await bringid.verifyProofs({ proofs: [ ... ], provider });
 // it is possible to use a custom JSONRpcProvider for a proofs validity check
-
 ```
+
+**Returns:**
+
+- `verified` — boolean indicating if proofs are valid
+- `points` — object containing:
+  - `total` — total points across all credential groups
+  - `groups` — array of `{ credential_group_id, points }` for each proof
 
 ### `bringid.verifyHumanity(options?)`
 
