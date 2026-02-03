@@ -1,5 +1,13 @@
 # BringID
 
+## 0.3.0-beta
+
+- **Breaking:** `verifyProofs` now returns `{ verified, points }` instead of `boolean`
+  - `verified` — boolean indicating if proofs are valid
+  - `points.total` — total points across all credential groups
+  - `points.groups` — array of `{ credential_group_id, points }` for each proof
+- Removed unused type definitions
+
 ## 0.2.1-beta
 
 - Added minor UI fixes

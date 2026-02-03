@@ -1,4 +1,4 @@
-import { fetchRegistryConfig, generateId } from "@/utils"
+import { fetchRegistryConfig, fetchTasksConfig, generateId } from "@/utils"
 import {
   TRequestType,
   TRequest,
@@ -138,7 +138,13 @@ export class BringID {
     proofs,
     provider
   }) => {
-
+    const failedResult = {
+      verified: false,
+      points: {
+        total: 0,
+        groups: []
+      }
+    }
 
     const registryConfig = await fetchRegistryConfig(this.mode)
 
@@ -146,8 +152,31 @@ export class BringID {
       throw new Error('configs cannot be fetched')
     }
 
-    const registryInterface = new ethers.Interface(REGISTRY_ABI)
-    const multicall3Interface = new ethers.Interface(MULTICALL3_ABI)
+    const tasksConfig = await fetchTasksConfig(this.mode)
+
+    if (!tasksConfig) {
+      throw new Error('tasks config cannot be fetched')
+    }
+
+    const buildSuccessResult = () => {
+      const groups = proofs.map((proof) => {
+        const points = tasksConfig.get(proof.credential_group_id) ?? 0
+        return {
+          credential_group_id: proof.credential_group_id,
+          points
+        }
+      })
+
+      const total = groups.reduce((sum, g) => sum + g.points, 0)
+
+      return {
+        verified: true,
+        points: {
+          total,
+          groups
+        }
+      }
+    }
 
     if (!provider) {
       try {
@@ -159,12 +188,19 @@ export class BringID {
           registryConfig.REGISTRY
         )
 
-        return result
+        if (result) {
+          return buildSuccessResult()
+        }
+
+        return failedResult
       } catch (err) {
         console.error(err)
-        return false
-      } 
+        return failedResult
+      }
     }
+
+    const registryInterface = new ethers.Interface(REGISTRY_ABI)
+    const multicall3Interface = new ethers.Interface(MULTICALL3_ABI)
 
     // Build multicall data
     const calls: TCall3[] = proofs.map((proof) => {
@@ -198,10 +234,10 @@ export class BringID {
         to: configs.MULTICALL3_ADDRESS,
         data: multicallData
       })
-      return true
+      return buildSuccessResult()
     } catch (err) {
       console.error(err)
-      return false
+      return failedResult
     }
   }
 
