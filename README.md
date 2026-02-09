@@ -154,6 +154,11 @@ const { proofs, points } = await bringid.verifyHumanity({
   scope: "0x...",
 });
 
+// With custom message
+const { proofs, points } = await bringid.verifyHumanity({
+  message: "custom_message",
+});
+
 // With minumum points requirement. If `minPoints` not presented any amount of points above 0 is acceptable
 const { proofs, points } = await bringid.verifyHumanity({
   minPoints: 10,
