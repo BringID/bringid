@@ -1,5 +1,9 @@
 # BringID
 
+## 0.3.1-beta
+
+- Added message property for `verifyHumanity` request
+
 ## 0.3.0-beta
 
 - **Breaking:** `verifyProofs` now returns `{ verified, points }` instead of `boolean`
