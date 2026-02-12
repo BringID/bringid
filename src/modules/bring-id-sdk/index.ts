@@ -1,4 +1,4 @@
-import { fetchRegistryConfig, generateId } from "@/utils"
+import { fetchRegistryConfig } from "@/utils"
 import {
   TRequestType,
   TRequest,
@@ -25,14 +25,10 @@ export class BringID {
   private appId: string
   private mode: TMode = 'production'
 
-  private pendingRequests = new Map<
-    string,
-    {
-      resolve: (v: any) => void,
-      reject: (e: any) => void,
-      requestType: TRequestType
-    }
-  >();
+  private pendingRequest: {
+    resolve: (v: any) => void,
+    reject: (e: any) => void,
+  } | null = null;
 
   constructor(args: TConstructorArgs) {
     this.appId = args.appId
@@ -51,8 +47,16 @@ export class BringID {
     return this.mode
   }
 
+  setMode = (mode: TMode) => {
+    this.mode = mode
+  }
+
   getAppId = () => {
     return this.appId
+  }
+
+  setAppId = (appId: string) => {
+    this.appId = appId
   }
 
   destroy: TDestroy = () => {
@@ -61,7 +65,7 @@ export class BringID {
     if (typeof window !== "undefined") {
       window.removeEventListener("message", this.handleMessage)
     }
-    this.rejectAllPendingRequests('DESTROYED')
+    this.rejectPendingRequest('DESTROYED')
   }
 
   /** POSTMESSAGE API */
@@ -74,43 +78,34 @@ export class BringID {
 
     const data: TResponse = event.data;
 
-    if (!data.requestId) {
-      return
-    }
-
     if (data.type === 'CLOSE_MODAL') {
-      this.rejectAllPendingRequests('REJECTED')
+      this.rejectPendingRequest('REJECTED')
       return
     }
 
-    const pending = this.pendingRequests.get(data.requestId);
-    if (!pending) return;
+    if (data.type === 'PROOFS_RESPONSE' && this.pendingRequest) {
+      const { resolve, reject } = this.pendingRequest
+      this.pendingRequest = null
 
-    // i have pending request, that should not be captured
-    if (pending.requestType === data.type) { return }
-
-    this.pendingRequests.delete(data.requestId);
-
-    if (data.error) pending.reject(data.error);
-    else pending.resolve(data.payload);
+      if (data.error) reject(data.error);
+      else resolve(data.payload);
+    }
   };
 
-  /** Helper to wrap messages as promises */
-  private request<T>(type: TRequestType, payload?: any): Promise<T> {
-    return new Promise<T>((resolve, reject) => {
-      const requestId = generateId();
-      this.pendingRequests.set(requestId, { resolve, reject, requestType: type });
+  private sendRequest<T>(type: TRequestType, payload?: any): Promise<T> {
+    this.rejectPendingRequest('REJECTED')
 
-      this.sendMessageToDialog({ type, requestId, payload });
+    return new Promise<T>((resolve, reject) => {
+      this.pendingRequest = { resolve, reject };
+      this.sendMessageToDialog({ type, payload });
     });
   }
 
-  private rejectAllPendingRequests(error: any): void {
-    for (const { reject } of this.pendingRequests.values()) {
-      reject(error);
+  private rejectPendingRequest(error: any): void {
+    if (this.pendingRequest) {
+      this.pendingRequest.reject(error)
+      this.pendingRequest = null
     }
-
-    this.pendingRequests.clear();
   }
 
   /** PUBLIC METHODS */
@@ -118,7 +113,11 @@ export class BringID {
     if (!payload.minPoints) {
       payload = { ...payload, minPoints: 0 }
     }
-    return this.request<{ proofs: TSemaphoreProof[], points: number }>("PROOFS_REQUEST", payload);
+    return this.sendRequest<{ proofs: TSemaphoreProof[], points: number }>("PROOFS_REQUEST", {
+      ...payload,
+      mode: this.mode,
+      appId: this.appId
+    });
   }
 
   getAddressScore: TGetAddressScore = async (

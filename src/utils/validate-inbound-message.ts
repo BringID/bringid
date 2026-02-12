@@ -22,10 +22,7 @@ function isCloseModalMessage(data: unknown): data is TCloseModalMessage {
   if (typeof data !== 'object' || data === null) return false
   const msg = data as Record<string, unknown>
 
-  return (
-    msg.type === 'CLOSE_MODAL' &&
-    (msg.requestId === undefined || typeof msg.requestId === 'string')
-  )
+  return msg.type === 'CLOSE_MODAL'
 }
 
 function isValidSemaphoreProof(proof: unknown): boolean {
@@ -52,7 +49,6 @@ function isProofsResponseMessage(data: unknown): data is TProofsResponseMessage 
   const msg = data as Record<string, unknown>
 
   if (msg.type !== 'PROOFS_RESPONSE') return false
-  if (typeof msg.requestId !== 'string') return false
 
   if (msg.error !== undefined && typeof msg.error !== 'string') return false
 

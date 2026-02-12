@@ -10,12 +10,10 @@ export type TGenerateUserKeyMessage = {
 
 export type TCloseModalMessage = {
   type: 'CLOSE_MODAL'
-  requestId?: string
 }
 
 export type TProofsResponseMessage = {
   type: 'PROOFS_RESPONSE'
-  requestId: string
   payload?: {
     proofs: TSemaphoreProof[]
     points: number
