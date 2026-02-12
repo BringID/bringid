@@ -21,7 +21,8 @@ export const BringIDModal: React.FC<TProps> = ({
   iframeOnLoad,
   highlightColor,
   theme = 'light',
-  connectUrl = 'https://widget.bringid.org'
+  connectUrl = 'https://widget.bringid.org',
+  customTitles
 }) => {
 
   if (!ALLOWED_CONNECT_DOMAINS.includes(connectUrl)) {
@@ -51,7 +52,8 @@ export const BringIDModal: React.FC<TProps> = ({
       url: encodeURIComponent(window.location.href),
       address,
       theme,
-      highlightColor: highlightColor ? encodeURIComponent(highlightColor) : undefined
+      highlightColor: highlightColor ? encodeURIComponent(highlightColor) : undefined,
+      customTitles: customTitles ? encodeURIComponent(JSON.stringify(customTitles)) : undefined
     }
   )
 
