@@ -1,4 +1,4 @@
-import { fetchRegistryConfig, fetchTasksConfig, generateId } from "@/utils"
+import { fetchRegistryConfig, generateId } from "@/utils"
 import {
   TRequestType,
   TRequest,
@@ -13,17 +13,18 @@ import {
   TDestroy,
   TVerifyProofs,
   TConstructorArgs
-} from "./types" 
+} from "./types"
 import api from "@/api"
-import { REGISTRY_ABI, MULTICALL3_ABI } from "@/abi"
+import { REGISTRY_ABI, MULTICALL3_ABI, SCORER_ABI } from "@/abi"
 import { ethers } from 'ethers'
 import configs from "@/configs"
 
 export class BringID {
   private dialogWindowOrigin = ''
   private isDestroyed = false
+  private appId: string
   private mode: TMode = 'production'
-  
+
   private pendingRequests = new Map<
     string,
     {
@@ -33,19 +34,25 @@ export class BringID {
     }
   >();
 
-  constructor(args?: TConstructorArgs) {
+  constructor(args: TConstructorArgs) {
+    this.appId = args.appId
+
     if (typeof window !== "undefined") {
       window.addEventListener("message", this.handleMessage);
       this.dialogWindowOrigin = window.location.origin
     }
 
-    if (args && args.mode) {
+    if (args.mode) {
       this.mode = args.mode
     }
   }
 
   getMode = () => {
     return this.mode
+  }
+
+  getAppId = () => {
+    return this.appId
   }
 
   destroy: TDestroy = () => {
@@ -140,7 +147,7 @@ export class BringID {
   }) => {
     const failedResult = {
       verified: false,
-      points: {
+      score: {
         total: 0,
         groups: []
       }
@@ -152,71 +159,27 @@ export class BringID {
       throw new Error('configs cannot be fetched')
     }
 
-    const tasksConfig = await fetchTasksConfig(this.mode)
-
-    if (!tasksConfig) {
-      throw new Error('tasks config cannot be fetched')
-    }
-
-    const buildSuccessResult = () => {
-      const groups = proofs.map((proof) => {
-        const points = tasksConfig.get(proof.credential_group_id) ?? 0
-        return {
-          credential_group_id: proof.credential_group_id,
-          points
-        }
-      })
-
-      const total = groups.reduce((sum, g) => sum + g.points, 0)
-
-      return {
-        verified: true,
-        points: {
-          total,
-          groups
-        }
-      }
-    }
-
-    if (!provider) {
-      try {
-        const {
-          result
-        } = await api.verifyProofs(
-          proofs,
-          Number(registryConfig.CHAIN_ID),
-          registryConfig.REGISTRY
-        )
-
-        if (result) {
-          return buildSuccessResult()
-        }
-
-        return failedResult
-      } catch (err) {
-        console.error(err)
-        return failedResult
-      }
-    }
-
     const registryInterface = new ethers.Interface(REGISTRY_ABI)
     const multicall3Interface = new ethers.Interface(MULTICALL3_ABI)
+    const scorerInterface = new ethers.Interface(SCORER_ABI)
 
-    // Build multicall data
-    const calls: TCall3[] = proofs.map((proof) => {
-      const credentialGroupProof = {
-        credentialGroupId: proof.credential_group_id,
-        semaphoreProof: {
-          merkleTreeDepth: proof.semaphore_proof.merkle_tree_depth,
-          merkleTreeRoot: proof.semaphore_proof.merkle_tree_root,
-          nullifier: proof.semaphore_proof.nullifier,
-          message: proof.semaphore_proof.message,
-          scope: proof.semaphore_proof.scope,
-          points: proof.semaphore_proof.points
-        }
+    const credentialGroupProofs = proofs.map((proof) => ({
+      credentialGroupId: proof.credential_group_id,
+      appId: proof.app_id,
+      semaphoreProof: {
+        merkleTreeDepth: proof.semaphore_proof.merkle_tree_depth,
+        merkleTreeRoot: proof.semaphore_proof.merkle_tree_root,
+        nullifier: proof.semaphore_proof.nullifier,
+        message: proof.semaphore_proof.message,
+        scope: proof.semaphore_proof.scope,
+        points: proof.semaphore_proof.points
       }
+    }))
 
+    // Build Multicall3 calls: verifyProof for each proof + getScore for total
+    const verifyCalls: TCall3[] = credentialGroupProofs.map((credentialGroupProof) => {
       const callData = registryInterface.encodeFunctionData('verifyProof', [
+        0,
         credentialGroupProof
       ])
 
@@ -227,14 +190,70 @@ export class BringID {
       }
     })
 
-    const multicallData = multicall3Interface.encodeFunctionData('aggregate3', [calls])
+    // Get the app's scorer address
+    const appData = await new ethers.Contract(
+      registryConfig.REGISTRY,
+      REGISTRY_ABI,
+      provider
+    ).apps(this.appId)
+
+    const scorerAddress = appData.scorer
+
+    // Build scorer calls for per-group scores
+    const scorerCalls: TCall3[] = proofs.map((proof) => {
+      const callData = scorerInterface.encodeFunctionData('getScore', [
+        proof.credential_group_id
+      ])
+
+      return {
+        target: scorerAddress,
+        allowFailure: false,
+        callData
+      }
+    })
+
+    const allCalls = [...verifyCalls, ...scorerCalls]
+    const multicallData = multicall3Interface.encodeFunctionData('aggregate3', [allCalls])
 
     try {
-      await provider.call({
+      const result = await provider.call({
         to: configs.MULTICALL3_ADDRESS,
         data: multicallData
       })
-      return buildSuccessResult()
+
+      const decoded = multicall3Interface.decodeFunctionResult('aggregate3', result)
+      const results = decoded[0]
+
+      // Check all verify calls succeeded
+      const verifyResults = results.slice(0, proofs.length)
+      const allVerified = verifyResults.every((r: any) => {
+        const [verified] = registryInterface.decodeFunctionResult('verifyProof', r.returnData)
+        return verified
+      })
+
+      if (!allVerified) {
+        return failedResult
+      }
+
+      // Decode scorer results
+      const scorerResults = results.slice(proofs.length)
+      const groups = proofs.map((proof, i) => {
+        const [groupScore] = scorerInterface.decodeFunctionResult('getScore', scorerResults[i].returnData)
+        return {
+          credential_group_id: proof.credential_group_id,
+          score: Number(groupScore)
+        }
+      })
+
+      const total = groups.reduce((sum, g) => sum + g.score, 0)
+
+      return {
+        verified: true,
+        score: {
+          total,
+          groups
+        }
+      }
     } catch (err) {
       console.error(err)
       return failedResult

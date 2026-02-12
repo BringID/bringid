@@ -17,6 +17,7 @@ import ALLOWED_CONNECT_DOMAINS from '@/configs/allowed-connect-domains'
 
 export const BringIDModal: React.FC<TProps> = ({
   address,
+  appId,
   generateSignature,
   iframeOnLoad,
   mode = 'production',
@@ -51,11 +52,14 @@ export const BringIDModal: React.FC<TProps> = ({
     {
       url: encodeURIComponent(window.location.href),
       address,
+      appId,
       mode,
       theme,
       highlightColor: highlightColor ? encodeURIComponent(highlightColor) : undefined
     }
   )
+
+  console.log({ queryParams })
 
   const iframeSrc =
     typeof window === "undefined"
