@@ -1,10 +1,9 @@
-import { fetchRegistryConfig, fetchTasksConfig, generateId } from "@/utils"
+import { fetchRegistryConfig } from "@/utils"
 import {
   TRequestType,
   TRequest,
   TResponse,
   TSemaphoreProof,
-  TCall3,
   TMode
 } from "@/types"
 import {
@@ -13,33 +12,31 @@ import {
   TDestroy,
   TVerifyProofs,
   TConstructorArgs
-} from "./types" 
+} from "./types"
 import api from "@/api"
-import { REGISTRY_ABI, MULTICALL3_ABI } from "@/abi"
+import { REGISTRY_ABI, SCORER_ABI } from "@/abi"
 import { ethers } from 'ethers'
-import configs from "@/configs"
 
 export class BringID {
   private dialogWindowOrigin = ''
   private isDestroyed = false
+  private appId: string
   private mode: TMode = 'production'
-  
-  private pendingRequests = new Map<
-    string,
-    {
-      resolve: (v: any) => void,
-      reject: (e: any) => void,
-      requestType: TRequestType
-    }
-  >();
 
-  constructor(args?: TConstructorArgs) {
+  private pendingRequest: {
+    resolve: (v: any) => void,
+    reject: (e: any) => void,
+  } | null = null;
+
+  constructor(args: TConstructorArgs) {
+    this.appId = args.appId
+
     if (typeof window !== "undefined") {
       window.addEventListener("message", this.handleMessage);
       this.dialogWindowOrigin = window.location.origin
     }
 
-    if (args && args.mode) {
+    if (args.mode) {
       this.mode = args.mode
     }
   }
@@ -48,13 +45,25 @@ export class BringID {
     return this.mode
   }
 
+  setMode = (mode: TMode) => {
+    this.mode = mode
+  }
+
+  getAppId = () => {
+    return this.appId
+  }
+
+  setAppId = (appId: string) => {
+    this.appId = appId
+  }
+
   destroy: TDestroy = () => {
     if (this.isDestroyed) return
     this.isDestroyed = true
     if (typeof window !== "undefined") {
       window.removeEventListener("message", this.handleMessage)
     }
-    this.rejectAllPendingRequests('DESTROYED')
+    this.rejectPendingRequest('DESTROYED')
   }
 
   /** POSTMESSAGE API */
@@ -67,51 +76,45 @@ export class BringID {
 
     const data: TResponse = event.data;
 
-    if (!data.requestId) {
-      return
-    }
-
     if (data.type === 'CLOSE_MODAL') {
-      this.rejectAllPendingRequests('REJECTED')
+      this.rejectPendingRequest('REJECTED')
       return
     }
 
-    const pending = this.pendingRequests.get(data.requestId);
-    if (!pending) return;
+    if (data.type === 'PROOFS_RESPONSE' && this.pendingRequest) {
+      const { resolve, reject } = this.pendingRequest
+      this.pendingRequest = null
 
-    // i have pending request, that should not be captured
-    if (pending.requestType === data.type) { return }
-
-    this.pendingRequests.delete(data.requestId);
-
-    if (data.error) pending.reject(data.error);
-    else pending.resolve(data.payload);
+      if (data.error) reject(data.error);
+      else resolve(data.payload);
+    }
   };
 
-  /** Helper to wrap messages as promises */
-  private request<T>(type: TRequestType, payload?: any): Promise<T> {
-    return new Promise<T>((resolve, reject) => {
-      const requestId = generateId();
-      this.pendingRequests.set(requestId, { resolve, reject, requestType: type });
+  private sendRequest<T>(type: TRequestType, payload?: any): Promise<T> {
+    this.rejectPendingRequest('REJECTED')
 
-      this.sendMessageToDialog({ type, requestId, payload });
+    return new Promise<T>((resolve, reject) => {
+      this.pendingRequest = { resolve, reject };
+      this.sendMessageToDialog({ type, payload });
     });
   }
 
-  private rejectAllPendingRequests(error: any): void {
-    for (const { reject } of this.pendingRequests.values()) {
-      reject(error);
+  private rejectPendingRequest(error: any): void {
+    if (this.pendingRequest) {
+      this.pendingRequest.reject(error)
+      this.pendingRequest = null
     }
-
-    this.pendingRequests.clear();
   }
 
   /** PUBLIC METHODS */
   verifyHumanity: TVerifyHumanity = async (payload = {}) => {
-    if (!payload.minPoints) {
-      payload = { ...payload, minPoints: 0 }
-    }
-    return this.request<{ proofs: TSemaphoreProof[], points: number }>("PROOFS_REQUEST", payload);
+    return this.sendRequest<{ proofs: TSemaphoreProof[], points: number }>("PROOFS_REQUEST", {
+      minPoints: 0,
+      context: 0,
+      ...payload,
+      mode: this.mode,
+      appId: this.appId
+    });
   }
 
   getAddressScore: TGetAddressScore = async (
@@ -136,11 +139,13 @@ export class BringID {
 
   verifyProofs: TVerifyProofs = async ({
     proofs,
-    provider
+    provider,
+    context,
+    contract
   }) => {
     const failedResult = {
       verified: false,
-      points: {
+      score: {
         total: 0,
         groups: []
       }
@@ -152,91 +157,59 @@ export class BringID {
       throw new Error('configs cannot be fetched')
     }
 
-    const tasksConfig = await fetchTasksConfig(this.mode)
+    const credentialGroupProofs = proofs.map((proof) => ({
+      credentialGroupId: proof.credential_group_id,
+      appId: proof.app_id,
+      semaphoreProof: {
+        merkleTreeDepth: proof.semaphore_proof.merkle_tree_depth,
+        merkleTreeRoot: proof.semaphore_proof.merkle_tree_root,
+        nullifier: proof.semaphore_proof.nullifier,
+        message: proof.semaphore_proof.message,
+        scope: proof.semaphore_proof.scope,
+        points: proof.semaphore_proof.points
+      }
+    }))
 
-    if (!tasksConfig) {
-      throw new Error('tasks config cannot be fetched')
-    }
+    const registry = new ethers.Contract(
+      registryConfig.REGISTRY,
+      REGISTRY_ABI,
+      provider
+    )
 
-    const buildSuccessResult = () => {
-      const groups = proofs.map((proof) => {
-        const points = tasksConfig.get(proof.credential_group_id) ?? 0
-        return {
-          credential_group_id: proof.credential_group_id,
-          points
-        }
-      })
+    try {
+      const contextValue = context ?? 0
+      const fromAddress = contract ?? registryConfig.REGISTRY
 
-      const total = groups.reduce((sum, g) => sum + g.points, 0)
+      const verified = await registry.verifyProofs.staticCall(contextValue, credentialGroupProofs, { from: fromAddress })
+
+      if (!verified) {
+        return failedResult
+      }
+
+      // Get scorer address for this app
+      const appData = await registry.apps(this.appId)
+      const scorerAddress = appData.scorer
+      // Fetch per-group scores from the scorer contract
+      const scorer = new ethers.Contract(scorerAddress, SCORER_ABI, provider)
+      const groupIds = proofs.map((proof) => proof.credential_group_id)
+      const scores = await scorer.getScores(groupIds)
+
+      const groups = proofs.map((proof, i) => ({
+        credential_group_id: proof.credential_group_id,
+        score: Number(scores[i])
+      }))
+
+      const total = groups.reduce((sum, g) => sum + g.score, 0)
 
       return {
         verified: true,
-        points: {
+        score: {
           total,
           groups
         }
       }
-    }
-
-    if (!provider) {
-      try {
-        const {
-          result
-        } = await api.verifyProofs(
-          proofs,
-          Number(registryConfig.CHAIN_ID),
-          registryConfig.REGISTRY
-        )
-
-        if (result) {
-          return buildSuccessResult()
-        }
-
-        return failedResult
-      } catch (err) {
-        console.error(err)
-        return failedResult
-      }
-    }
-
-    const registryInterface = new ethers.Interface(REGISTRY_ABI)
-    const multicall3Interface = new ethers.Interface(MULTICALL3_ABI)
-
-    // Build multicall data
-    const calls: TCall3[] = proofs.map((proof) => {
-      const credentialGroupProof = {
-        credentialGroupId: proof.credential_group_id,
-        semaphoreProof: {
-          merkleTreeDepth: proof.semaphore_proof.merkle_tree_depth,
-          merkleTreeRoot: proof.semaphore_proof.merkle_tree_root,
-          nullifier: proof.semaphore_proof.nullifier,
-          message: proof.semaphore_proof.message,
-          scope: proof.semaphore_proof.scope,
-          points: proof.semaphore_proof.points
-        }
-      }
-
-      const callData = registryInterface.encodeFunctionData('verifyProof', [
-        credentialGroupProof
-      ])
-
-      return {
-        target: registryConfig.REGISTRY,
-        allowFailure: false,
-        callData
-      }
-    })
-
-    const multicallData = multicall3Interface.encodeFunctionData('aggregate3', [calls])
-
-    try {
-      await provider.call({
-        to: configs.MULTICALL3_ADDRESS,
-        data: multicallData
-      })
-      return buildSuccessResult()
     } catch (err) {
-      console.error(err)
+      console.error('[verifyProofs] error:', err)
       return failedResult
     }
   }

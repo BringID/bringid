@@ -9,7 +9,6 @@ function isProofsRequestMessage(data: unknown): data is TProofsRequestMessage {
   const msg = data as Record<string, unknown>
 
   if (msg.type !== 'PROOFS_REQUEST') return false
-  if (typeof msg.requestId !== 'string') return false
 
   if (msg.payload !== undefined) {
     if (typeof msg.payload !== 'object' || msg.payload === null) return false

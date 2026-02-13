@@ -1,5 +1,24 @@
 # BringID
 
+## 0.4.0-beta
+
+- **Breaking:** `BringID` constructor now requires `appId` — `new BringID({ appId: "1" })`
+- **Breaking:** `verifyProofs` result shape changed from `points` to `score` — `{ verified, score: { total, groups } }` where groups contain `score` instead of `points`
+- **Breaking:** `verifyProofs` now requires a `provider` — removed off-chain API verification mode
+- **Breaking:** `verifyHumanity` replaced `scope` parameter with `contract` (0x address string) and `context` (number, defaults to 0)
+- **Breaking:** `BringIDModal` removed `mode` prop — mode and appId are now passed from SDK to widget automatically via postMessage
+- `verifyProofs` accepts optional `context` (number, defaults to 0) and `contract` (0x address string, defaults to registry address) parameters for on-chain scope verification
+- `verifyProofs` now calls registry `verifyProofs` and scorer `getScores` directly instead of using Multicall3
+- `TSemaphoreProof` type now includes `app_id` field
+- `BringIDModal` added `customTitles` prop for overriding widget UI titles (`pointsTitle`, `pointsShortTitle`, `scoreTitle`)
+- `BringIDModal` iframe sandbox updated to include `allow-popups-to-escape-sandbox` and `allow-modals`
+- Added `SCORER_ABI` with `getScore` and `getScores` methods
+- Updated `REGISTRY_ABI` with `verifyProofs`, `getScore`, and `apps` methods
+- Added `setMode`, `setAppId`, `getAppId` methods to `BringID` class
+- Simplified internal request handling from map-based to single pending request
+- Removed `fetchTasksConfig` utility and tasks config dependency
+- Removed `generateId` utility and `requestId` from message protocol
+
 ## 0.3.1-beta
 
 - Added message property for `verifyHumanity` request

@@ -16,14 +16,7 @@ import {
   TInboundMessage,
   TProofsResponseMessage
 } from './inbound-message'
-import TCall3 from './call3'
 import TMode from "./mode"
-
-export type { TTaskCheck } from './task-check'
-export type { TTaskGroup } from './task-group'
-export type { TTask } from './task'
-export type { TTasksConfig } from './tasks-config'
-export type { TCredentialGroupPointsMap } from './credential-group-points-map'
 
 export {
   TMode,
@@ -40,6 +33,5 @@ export {
   TRequest,
   TGenerateSignature,
   TResponse,
-  TCall3,
   TScoreMessage
 }

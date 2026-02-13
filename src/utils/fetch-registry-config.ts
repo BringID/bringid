@@ -9,7 +9,7 @@
   async function fetchRegistryConfig(mode: TMode): Promise<TRegistryConfig | null> {
 
     try {
-      const configsFileName = mode === 'dev' ? 'dev-configs' : 'configs'
+      const configsFileName = mode === 'dev' ? 'dev-configs-staging' : 'configs'
       const configs = await api<TRegistryConfig>(
         `https://raw.githubusercontent.com/BringID/configs/main/${configsFileName}.json`
       )

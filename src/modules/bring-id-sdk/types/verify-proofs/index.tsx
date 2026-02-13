@@ -3,23 +3,25 @@ import { ethers } from 'ethers'
 
 type TArgs = {
   proofs: TSemaphoreProof[]
-  provider?: ethers.JsonRpcProvider
+  provider: ethers.JsonRpcProvider
+  context?: number
+  contract?: string
 }
 
-type TCredentialGroupPoints = {
+type TCredentialGroupScore = {
   credential_group_id: string
-  points: number
+  score: number
 }
 
 type TVerifyProofsResult = {
   verified: boolean
-  points: {
+  score: {
     total: number
-    groups: TCredentialGroupPoints[]
+    groups: TCredentialGroupScore[]
   }
 }
 
 type TVerifyProofs = (payload: TArgs) => Promise<TVerifyProofsResult>
 
 export default TVerifyProofs
-export type { TVerifyProofsResult, TCredentialGroupPoints }
+export type { TVerifyProofsResult, TCredentialGroupScore }

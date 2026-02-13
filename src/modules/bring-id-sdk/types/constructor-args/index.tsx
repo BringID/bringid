@@ -1,7 +1,8 @@
 import { TMode } from "@/types"
 
 type TConstructorArgs = {
-  mode: TMode
+  appId: string
+  mode?: TMode
 }
 
 export default TConstructorArgs

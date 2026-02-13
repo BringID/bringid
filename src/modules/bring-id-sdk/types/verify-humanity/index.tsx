@@ -2,7 +2,8 @@ import { TSemaphoreProof } from "@/types"
 
 type TArgs = {
   minPoints?: number;
-  scope?: string;
+  contract?: string;
+  context?: number;
   message?: string;
 }
 

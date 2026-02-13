@@ -19,10 +19,10 @@ export const BringIDModal: React.FC<TProps> = ({
   address,
   generateSignature,
   iframeOnLoad,
-  mode = 'production',
   highlightColor,
   theme = 'light',
-  connectUrl = 'https://widget.bringid.org'
+  connectUrl = 'https://widget.bringid.org',
+  customTitles
 }) => {
 
   if (!ALLOWED_CONNECT_DOMAINS.includes(connectUrl)) {
@@ -51,9 +51,9 @@ export const BringIDModal: React.FC<TProps> = ({
     {
       url: encodeURIComponent(window.location.href),
       address,
-      mode,
       theme,
-      highlightColor: highlightColor ? encodeURIComponent(highlightColor) : undefined
+      highlightColor: highlightColor ? encodeURIComponent(highlightColor) : undefined,
+      customTitles: customTitles ? encodeURIComponent(JSON.stringify(customTitles)) : undefined
     }
   )
 
@@ -69,7 +69,7 @@ export const BringIDModal: React.FC<TProps> = ({
           <Spinner size='large' />
         </LoadingScreen>}
         <IFrame
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals"
           ref={iframeRef}
           src={iframeSrc}
           onLoad={() => {

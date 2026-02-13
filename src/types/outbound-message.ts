@@ -1,8 +1,9 @@
 export type TProofsRequestMessage = {
   type: 'PROOFS_REQUEST'
-  requestId: string
   payload: {
     minPoints?: number
+    mode?: string
+    appId?: string
   }
 }
 
