@@ -10,7 +10,7 @@ The SDK provides three main capabilities:
 
 - **Reputation Scoring**: Get a reputation score (0-100) for any Ethereum address via the BringID API
 - **Humanity Verification**: Open a verification modal that guides users through identity proofs using Semaphore protocol, returning cryptographic proofs and humanity points
-- **Proof Verification**: Verify Semaphore proofs on-chain (via Multicall3 + Registry contract) or off-chain (via BringID API), returning verification status and points breakdown
+- **Proof Verification**: Verify Semaphore proofs on-chain (via Registry + Scorer contracts), returning verification status and score breakdown
 
 ### Technology Stack
 
@@ -53,46 +53,42 @@ The SDK is split into two entry points:
 │  BringID API (api.bringid.org)          │
 │  BringID Widget (widget.bringid.org)    │
 │  GitHub Configs (BringID/configs repo)  │
-│  On-chain contracts (Multicall3/Registry)│
+│  On-chain contracts (Registry/Scorer)   │
 └─────────────────────────────────────────┘
 ```
 
 ### Key Components
 
-1. **BringID Class** (`src/modules/bring-id-sdk/index.ts`): Main SDK class providing `getAddressScore()`, `verifyHumanity()`, and `verifyProofs()` methods. Communicates with the modal via `window.postMessage`.
+1. **BringID Class** (`src/modules/bring-id-sdk/index.ts`): Main SDK class providing `getAddressScore()`, `verifyHumanity()`, and `verifyProofs()` methods. Requires `appId` at construction. Communicates with the modal via `window.postMessage`. Provides `setMode()`, `setAppId()`, and `getAppId()` for runtime configuration.
 
-2. **BringIDModal Component** (`src/modules/bring-id-modal/index.tsx`): React component that renders an iframe pointing to the BringID widget (`widget.bringid.org`). Handles message proxying between the SDK and the widget iframe.
+2. **BringIDModal Component** (`src/modules/bring-id-modal/index.tsx`): React component that renders an iframe pointing to the BringID widget (`widget.bringid.org`). Handles message proxying between the SDK and the widget iframe. Mode and appId are passed from the SDK to the widget automatically via postMessage.
 
 3. **API Layer** (`src/api/`):
    - `get-score/`: Fetches reputation score for an address from the BringID API
-   - `verify-proofs/`: Verifies Semaphore proofs via the BringID API
 
 4. **Utils** (`src/utils/`):
    - `fetch-registry-config.ts`: Fetches on-chain registry config (contract address, chain ID) from GitHub
-   - `fetch-tasks-config.ts`: Fetches tasks/credential group points mapping from GitHub
    - `validate-outbound-message.ts` / `validate-inbound-message.ts`: Message validation for postMessage communication
    - `create-query-string.tsx`: Query string builder for iframe URL
    - `define-api-url.tsx`: API URL resolver
-   - `generate-id.tsx`: UUID generator for request tracking
 
 5. **Hooks** (`src/hooks/`):
    - `use-message-proxy.tsx`: React hook that bridges postMessage between the SDK and the widget iframe
 
 6. **ABI** (`src/abi/`):
-   - `registry.tsx`: Registry contract ABI for on-chain proof verification
-   - `milticall3.tsx`: Multicall3 contract ABI for batched on-chain calls
+   - `registry.tsx`: Registry contract ABI (`verifyProof`, `verifyProofs`, `getScore`, `apps`)
+   - `scorer.tsx`: Scorer contract ABI (`getScore`, `getScores`)
 
 7. **Errors** (`src/errors/`): Custom error classes — `ValidationError`, `ConflictError`, `ForbiddenError`, `UnauthorizedError`
 
 8. **Configs** (`src/configs/`):
-   - `index.tsx`: Main config (API URL, Multicall3 address)
+   - `index.tsx`: Main config (API URL)
    - `allowed-connect-domains.tsx`: Whitelist of allowed widget domains
 
 ### External Services Used
 
 1. **BringID API** (`https://api.bringid.org`): Zuplo-hosted API gateway providing:
    - `GET /v1/score/address/:address` — Returns reputation score for an Ethereum address
-   - `POST /v1/proofs/verify` — Verifies Semaphore proofs server-side
    - Requires Bearer token authentication (`ZUPLO_API_KEY`)
 
 2. **BringID Widget** (`https://widget.bringid.org`): Frontend verification widget loaded in an iframe. Handles the interactive humanity verification flow (OAuth, credential linking, proof generation). Allowed domains:
@@ -101,18 +97,17 @@ The SDK is split into two entry points:
    - `https://dev.widget.bringid.org` (development)
 
 3. **BringID Configs** (`https://raw.githubusercontent.com/BringID/configs/main/`): GitHub-hosted JSON configuration files:
-   - `configs.json` / `dev-configs.json` — Registry contract address and chain ID
-   - `tasks.json` / `tasks-sepolia.json` — Credential group points mapping
+   - `configs.json` / `dev-configs-staging.json` — Registry contract address and chain ID
 
 4. **On-chain Contracts**:
-   - **Multicall3** (`0xca11bde05977b3631167028862be2a173976ca11`): Standard Multicall3 contract for batched calls
-   - **Registry Contract**: BringID registry for on-chain Semaphore proof verification (address fetched from configs)
+   - **Registry Contract**: BringID registry for on-chain Semaphore proof verification and app management (address fetched from configs)
+   - **Scorer Contract**: Per-app scorer for credential group score lookups (address fetched from Registry via `apps()`)
 
 ### Communication Flow
 
-1. Host app creates a `BringID` instance and mounts `BringIDModal`
+1. Host app creates a `BringID` instance with `appId` and mounts `BringIDModal`
 2. `BringIDModal` renders an iframe pointing to `widget.bringid.org`
-3. When `verifyHumanity()` is called, SDK sends a `PROOFS_REQUEST` message via `window.postMessage`
+3. When `verifyHumanity()` is called, SDK sends a `PROOFS_REQUEST` message via `window.postMessage` (includes `mode` and `appId`)
 4. The `useMessageProxy` hook forwards the message to the iframe
 5. The widget handles user interaction (OAuth, signing, proof generation)
 6. The widget sends proofs back via postMessage
@@ -123,23 +118,30 @@ The SDK is split into two entry points:
 
 ## API
 
-### `new BringID(options?)`
+### `new BringID({ appId, mode? })`
 
-Creates a new SDK instance.
+Creates a new SDK instance. The `appId` is required.
 
 ```ts
 import { BringID } from "bringid";
 
 // Production mode (default)
-const bringid = new BringID();
+const bringid = new BringID({ appId: "1" });
 
 // Development mode
-const bringid = new BringID({ mode: "dev" });
+const bringid = new BringID({ appId: "1", mode: "dev" });
 ```
 
 **Options:**
 
-- `mode` — `"production"` (default) or `"dev"`. Dev mode uses staging APIs and Sepolia testnet configs.
+- `appId` (string, required) — Your application ID
+- `mode` (`"production"` | `"dev"`, optional) — Defaults to `"production"`. Dev mode uses staging APIs and Sepolia testnet configs.
+
+**Instance methods:**
+
+- `setMode(mode)` — Switch between `"production"` and `"dev"`
+- `setAppId(appId)` — Update the app ID
+- `getAppId()` — Get the current app ID
 
 ---
 
@@ -184,8 +186,11 @@ Opens the verification modal and returns Semaphore proofs. Requires `BringIDModa
 // Basic usage
 const { proofs, points } = await bringid.verifyHumanity();
 
-// With custom scope
-const { proofs, points } = await bringid.verifyHumanity({ scope: "0x..." });
+// With contract address
+const { proofs, points } = await bringid.verifyHumanity({ contract: "0x..." });
+
+// With context
+const { proofs, points } = await bringid.verifyHumanity({ context: 1 });
 
 // With custom message
 const { proofs, points } = await bringid.verifyHumanity({
@@ -198,7 +203,8 @@ const { proofs, points } = await bringid.verifyHumanity({ minPoints: 10 });
 
 **Parameters (all optional):**
 
-- `scope` (string) — Custom scope for the proof
+- `contract` (string) — Contract address (0x string) for the proof
+- `context` (number) — Context value. Defaults to 0.
 - `message` (string) — Custom message for the proof
 - `minPoints` (number) — Minimum points required. Defaults to 0 (any amount above 0 is acceptable)
 
@@ -216,6 +222,7 @@ const { proofs, points } = await bringid.verifyHumanity({ minPoints: 10 });
 ```typescript
 {
   credential_group_id: string
+  app_id: string
   semaphore_proof: {
     merkle_tree_depth: number
     merkle_tree_root: string
@@ -236,33 +243,40 @@ const { proofs, points } = await bringid.verifyHumanity({ minPoints: 10 });
 
 ### `bringid.verifyProofs(options)`
 
-Verifies Semaphore proofs and returns verification status with points breakdown. Can verify via BringID API (default) or on-chain using a custom provider.
+Verifies Semaphore proofs on-chain via the Registry and Scorer contracts and returns verification status with score breakdown. A `provider` is required.
 
 ```ts
-// Via BringID API (default)
-const { verified, points } = await bringid.verifyProofs({ proofs: [...] });
-
-// Via on-chain verification with custom provider
 import { JsonRpcProvider } from "ethers";
-const provider = new JsonRpcProvider("https://sepolia.base.org");
-const { verified, points } = await bringid.verifyProofs({ proofs: [...], provider });
+
+const provider = new JsonRpcProvider("https://mainnet.base.org");
+const { verified, score } = await bringid.verifyProofs({ proofs, provider });
+
+// With optional context and contract parameters
+const { verified, score } = await bringid.verifyProofs({
+  proofs,
+  provider,
+  context: 1,
+  contract: "0x..."
+});
 ```
 
 **Parameters:**
 
 - `proofs` (TSemaphoreProof[], required) — Array of Semaphore proofs to verify
-- `provider` (ethers.JsonRpcProvider, optional) — Custom JSON-RPC provider for on-chain verification. If omitted, uses BringID API.
+- `provider` (ethers.JsonRpcProvider, required) — JSON-RPC provider for on-chain verification
+- `context` (number, optional) — Context value for scope verification. Defaults to 0.
+- `contract` (string, optional) — Contract address (0x) for scope verification. Defaults to registry address.
 
 **Returns:**
 
 ```typescript
 {
   verified: boolean; // Whether all proofs are valid
-  points: {
-    total: number; // Total points across all credential groups
+  score: {
+    total: number; // Total score across all credential groups
     groups: Array<{
       credential_group_id: string;
-      points: number;
+      score: number;
     }>;
   }
 }
@@ -270,8 +284,8 @@ const { verified, points } = await bringid.verifyProofs({ proofs: [...], provide
 
 **Errors:**
 
-- Throws `Error` if registry or tasks config cannot be fetched
-- Returns `{ verified: false, points: { total: 0, groups: [] } }` on verification failure (does not throw)
+- Throws `Error` if registry config cannot be fetched
+- Returns `{ verified: false, score: { total: 0, groups: [] } }` on verification failure (does not throw)
 
 ---
 
@@ -287,7 +301,7 @@ bringid.destroy();
 
 ### `BringIDModal` (React Component)
 
-React component that renders the verification iframe. Import from `bringid/react`.
+React component that renders the verification iframe. Import from `bringid/react`. Mode and appId are passed from the SDK instance automatically via postMessage.
 
 ```tsx
 import { BringIDModal } from "bringid/react";
@@ -296,10 +310,14 @@ import { BringIDModal } from "bringid/react";
   address={address}
   generateSignature={(message) => walletClient.signMessage({ message })}
   iframeOnLoad={() => console.log("Ready")}
-  mode="dev"
   theme="light"
   highlightColor="#FF5733"
   connectUrl="https://widget.bringid.org"
+  customTitles={{
+    pointsTitle: "Humanity Points",
+    pointsShortTitle: "HP",
+    scoreTitle: "Score"
+  }}
 />;
 ```
 
@@ -308,10 +326,10 @@ import { BringIDModal } from "bringid/react";
 - `address` (string, optional) — Connected wallet address
 - `generateSignature` ((message: string) => Promise<string>, optional) — Function to sign messages with the user's wallet
 - `iframeOnLoad` (() => void, optional) — Callback when the iframe has loaded
-- `mode` (`"production"` | `"dev"`, optional) — Defaults to `"production"`
 - `theme` (`"light"` | `"dark"`, optional) — Defaults to `"light"`
 - `highlightColor` (string, optional) — Custom accent color
 - `connectUrl` (string, optional) — Widget URL. Defaults to `"https://widget.bringid.org"`. Must be in the allowed domains whitelist.
+- `customTitles` (object, optional) — Override widget UI titles: `{ pointsTitle, pointsShortTitle, scoreTitle }`
 
 ---
 
@@ -322,6 +340,7 @@ import { BringIDModal } from "bringid/react";
 ```typescript
 type TSemaphoreProof = {
   credential_group_id: string;
+  app_id: string;
   semaphore_proof: {
     merkle_tree_depth: number;
     merkle_tree_root: string;
@@ -348,11 +367,11 @@ type TScoreMessage = {
 ```typescript
 type TVerifyProofsResult = {
   verified: boolean;
-  points: {
+  score: {
     total: number;
     groups: Array<{
       credential_group_id: string;
-      points: number;
+      score: number;
     }>;
   };
 };
@@ -364,13 +383,12 @@ type TVerifyProofsResult = {
 
 ### Development vs Production Mode
 
-| Aspect          | Production (default)         | Dev                              |
-| --------------- | ---------------------------- | -------------------------------- |
-| API endpoint    | `https://api.bringid.org`    | `https://api.bringid.org`        |
-| Widget URL      | `https://widget.bringid.org` | `https://dev.widget.bringid.org` |
-| Registry config | `configs.json`               | `dev-configs.json`               |
-| Tasks config    | `tasks.json`                 | `tasks-sepolia.json`             |
-| Chain           | Mainnet                      | Sepolia                          |
+| Aspect          | Production (default)         | Dev                                |
+| --------------- | ---------------------------- | ---------------------------------- |
+| API endpoint    | `https://api.bringid.org`    | `https://api.bringid.org`          |
+| Widget URL      | `https://widget.bringid.org` | `https://dev.widget.bringid.org`   |
+| Registry config | `configs.json`               | `dev-configs-staging.json`         |
+| Chain           | Mainnet                      | Sepolia                            |
 
 ### Environment Variables
 
@@ -393,18 +411,17 @@ src/
 │       ├── component-types.tsx       # Props type
 │       └── styled-components.tsx     # Styled components
 ├── api/                              # API layer
-│   ├── index.tsx                     # API methods (getScore, verifyProofs)
-│   ├── get-score/                    # Score endpoint types
-│   └── verify-proofs/               # Verify proofs endpoint types
+│   ├── index.tsx                     # API methods (getScore)
+│   └── get-score/                    # Score endpoint types
 ├── abi/                              # Smart contract ABIs
 │   ├── registry.tsx                  # Registry contract ABI
-│   └── milticall3.tsx               # Multicall3 contract ABI
+│   └── scorer.tsx                    # Scorer contract ABI
 ├── components/                       # Shared React components
 │   ├── dialog/                       # Dialog/modal wrapper
 │   ├── close-button/                # Close button
 │   └── spinner/                     # Loading spinner
 ├── configs/                          # Configuration
-│   ├── index.tsx                     # API URLs, contract addresses
+│   ├── index.tsx                     # API URL
 │   └── allowed-connect-domains.tsx  # Whitelisted widget domains
 ├── errors/                           # Custom error classes
 ├── helpers/                          # HTTP request helper, error text
@@ -436,16 +453,18 @@ src/
 
 1. **Two Entry Points**: The package exports `BringID` from `"bringid"` and `BringIDModal` from `"bringid/react"`. The React entry point is optional and only needed for `verifyHumanity()`.
 
-2. **PostMessage Communication**: The SDK and modal communicate via `window.postMessage`. Each request gets a unique UUID, and responses are matched by `requestId`.
+2. **App ID Required**: The `BringID` constructor requires an `appId` parameter. This ID is used for on-chain app lookups (scorer address) and is passed to the widget automatically.
 
-3. **On-chain vs Off-chain Verification**: `verifyProofs()` supports both modes. Without a `provider`, it calls the BringID API. With a `provider`, it makes a Multicall3 call to the Registry contract directly.
+3. **PostMessage Communication**: The SDK and modal communicate via `window.postMessage`. A single pending request model is used (new requests reject any pending one).
 
-4. **Config Fetching**: Registry and tasks configs are fetched at runtime from the `BringID/configs` GitHub repository. This allows updating contract addresses and points mapping without SDK updates.
+4. **On-chain Verification Only**: `verifyProofs()` requires an ethers `JsonRpcProvider`. It calls `registry.verifyProofs()` for proof validation and `scorer.getScores()` for per-group score lookup. The scorer address is fetched from the registry via `registry.apps(appId)`.
 
-5. **Domain Whitelist**: The `BringIDModal` only allows iframe sources from whitelisted domains (`widget.bringid.org`, `staging.widget.bringid.org`, `dev.widget.bringid.org`).
+5. **Config Fetching**: Registry config is fetched at runtime from the `BringID/configs` GitHub repository. This allows updating contract addresses without SDK updates.
 
-6. **Wallet Integration**: The SDK is wallet-agnostic. It accepts a `generateSignature` function prop, allowing integration with any wallet provider (wagmi, ethers, etc.).
+6. **Domain Whitelist**: The `BringIDModal` only allows iframe sources from whitelisted domains (`widget.bringid.org`, `staging.widget.bringid.org`, `dev.widget.bringid.org`).
 
-7. **Cleanup**: Always call `bringid.destroy()` when unmounting to clean up event listeners and reject pending requests.
+7. **Wallet Integration**: The SDK is wallet-agnostic. It accepts a `generateSignature` function prop, allowing integration with any wallet provider (wagmi, ethers, etc.).
 
-8. **Mode Consistency**: The `mode` must match between the `BringID` instance and the `BringIDModal` component for correct behavior.
+8. **Cleanup**: Always call `bringid.destroy()` when unmounting to clean up event listeners and reject pending requests.
+
+9. **Mode Propagation**: The `mode` is set only on the `BringID` instance and automatically passed to the widget via postMessage. There is no `mode` prop on `BringIDModal`.
