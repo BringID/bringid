@@ -16,7 +16,6 @@ import {
   TInboundMessage,
   TProofsResponseMessage
 } from './inbound-message'
-import TCall3 from './call3'
 import TMode from "./mode"
 
 export {
@@ -34,6 +33,5 @@ export {
   TRequest,
   TGenerateSignature,
   TResponse,
-  TCall3,
   TScoreMessage
 }

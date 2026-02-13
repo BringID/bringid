@@ -3,10 +3,6 @@ import {
   TGetScore,
   TGetScoreResponse,
 } from './get-score'
-import {
-  TVerifyProofsResponse,
-  TVerifyProofs
-} from './verify-proofs'
 import configs from '../configs'
 
 const getScore: TGetScore = (
@@ -23,29 +19,8 @@ const getScore: TGetScore = (
     )
 }
 
-const verifyProofs: TVerifyProofs = (
-  proofs,
-  chainId,
-  registryAddress
-) => {
-    return apiUtil<TVerifyProofsResponse>(
-      `${configs.ZUPLO_API_URL}/v1/proofs/verify`,
-      'POST',
-      {
-        'Authorization': `Bearer ${configs.ZUPLO_API_KEY}`,
-        'content-type': 'application/json'
-      },
-      {
-        proofs,
-        registry: registryAddress,
-        chain_id: chainId
-      }
-    )
-}
-
 const api = {
-  getScore,
-  verifyProofs
+  getScore
 }
 
 export default api

@@ -57,8 +57,6 @@ export const BringIDModal: React.FC<TProps> = ({
     }
   )
 
-  console.log({ queryParams })
-
   const iframeSrc =
     typeof window === "undefined"
       ? ""

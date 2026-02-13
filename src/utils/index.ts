@@ -1,5 +1,3 @@
-import generateId from './generate-id'
-
 import shortenString from './shorten-string';
 import defineApiUrl from './define-api-url';
 import api from './api';
@@ -10,7 +8,6 @@ import isValidOutboundMessage from './validate-outbound-message';
 import fetchRegistryConfig from './fetch-registry-config'
 
 export {
-  generateId,
   shortenString,
   msToTime,
   defineApiUrl,

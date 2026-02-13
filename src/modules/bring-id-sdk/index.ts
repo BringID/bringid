@@ -189,7 +189,6 @@ export class BringID {
       // Get scorer address for this app
       const appData = await registry.apps(this.appId)
       const scorerAddress = appData.scorer
-
       // Fetch per-group scores from the scorer contract
       const scorer = new ethers.Contract(scorerAddress, SCORER_ABI, provider)
       const groupIds = proofs.map((proof) => proof.credential_group_id)
@@ -210,7 +209,7 @@ export class BringID {
         }
       }
     } catch (err) {
-      console.error(err)
+      console.error('[verifyProofs] error:', err)
       return failedResult
     }
   }
