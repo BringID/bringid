@@ -4,7 +4,6 @@ import {
   TRequest,
   TResponse,
   TSemaphoreProof,
-  TCall3,
   TMode
 } from "@/types"
 import {
@@ -15,9 +14,8 @@ import {
   TConstructorArgs
 } from "./types"
 import api from "@/api"
-import { REGISTRY_ABI, MULTICALL3_ABI, SCORER_ABI } from "@/abi"
+import { REGISTRY_ABI, SCORER_ABI } from "@/abi"
 import { ethers } from 'ethers'
-import configs from "@/configs"
 
 export class BringID {
   private dialogWindowOrigin = ''
@@ -110,10 +108,9 @@ export class BringID {
 
   /** PUBLIC METHODS */
   verifyHumanity: TVerifyHumanity = async (payload = {}) => {
-    if (!payload.minPoints) {
-      payload = { ...payload, minPoints: 0 }
-    }
     return this.sendRequest<{ proofs: TSemaphoreProof[], points: number }>("PROOFS_REQUEST", {
+      minPoints: 0,
+      context: 0,
       ...payload,
       mode: this.mode,
       appId: this.appId
@@ -142,7 +139,9 @@ export class BringID {
 
   verifyProofs: TVerifyProofs = async ({
     proofs,
-    provider
+    provider,
+    context,
+    contract
   }) => {
     const failedResult = {
       verified: false,
@@ -158,10 +157,6 @@ export class BringID {
       throw new Error('configs cannot be fetched')
     }
 
-    const registryInterface = new ethers.Interface(REGISTRY_ABI)
-    const multicall3Interface = new ethers.Interface(MULTICALL3_ABI)
-    const scorerInterface = new ethers.Interface(SCORER_ABI)
-
     const credentialGroupProofs = proofs.map((proof) => ({
       credentialGroupId: proof.credential_group_id,
       appId: proof.app_id,
@@ -175,74 +170,35 @@ export class BringID {
       }
     }))
 
-    // Build Multicall3 calls: verifyProof for each proof + getScore for total
-    const verifyCalls: TCall3[] = credentialGroupProofs.map((credentialGroupProof) => {
-      const callData = registryInterface.encodeFunctionData('verifyProof', [
-        0,
-        credentialGroupProof
-      ])
-
-      return {
-        target: registryConfig.REGISTRY,
-        allowFailure: false,
-        callData
-      }
-    })
-
-    // Get the app's scorer address
-    const appData = await new ethers.Contract(
+    const registry = new ethers.Contract(
       registryConfig.REGISTRY,
       REGISTRY_ABI,
       provider
-    ).apps(this.appId)
-
-    const scorerAddress = appData.scorer
-
-    // Build scorer calls for per-group scores
-    const scorerCalls: TCall3[] = proofs.map((proof) => {
-      const callData = scorerInterface.encodeFunctionData('getScore', [
-        proof.credential_group_id
-      ])
-
-      return {
-        target: scorerAddress,
-        allowFailure: false,
-        callData
-      }
-    })
-
-    const allCalls = [...verifyCalls, ...scorerCalls]
-    const multicallData = multicall3Interface.encodeFunctionData('aggregate3', [allCalls])
+    )
 
     try {
-      const result = await provider.call({
-        to: configs.MULTICALL3_ADDRESS,
-        data: multicallData
-      })
+      const contextValue = context ?? 0
+      const fromAddress = contract ?? registryConfig.REGISTRY
 
-      const decoded = multicall3Interface.decodeFunctionResult('aggregate3', result)
-      const results = decoded[0]
+      const verified = await registry.verifyProofs.staticCall(contextValue, credentialGroupProofs, { from: fromAddress })
 
-      // Check all verify calls succeeded
-      const verifyResults = results.slice(0, proofs.length)
-      const allVerified = verifyResults.every((r: any) => {
-        const [verified] = registryInterface.decodeFunctionResult('verifyProof', r.returnData)
-        return verified
-      })
-
-      if (!allVerified) {
+      if (!verified) {
         return failedResult
       }
 
-      // Decode scorer results
-      const scorerResults = results.slice(proofs.length)
-      const groups = proofs.map((proof, i) => {
-        const [groupScore] = scorerInterface.decodeFunctionResult('getScore', scorerResults[i].returnData)
-        return {
-          credential_group_id: proof.credential_group_id,
-          score: Number(groupScore)
-        }
-      })
+      // Get scorer address for this app
+      const appData = await registry.apps(this.appId)
+      const scorerAddress = appData.scorer
+
+      // Fetch per-group scores from the scorer contract
+      const scorer = new ethers.Contract(scorerAddress, SCORER_ABI, provider)
+      const groupIds = proofs.map((proof) => proof.credential_group_id)
+      const scores = await scorer.getScores(groupIds)
+
+      const groups = proofs.map((proof, i) => ({
+        credential_group_id: proof.credential_group_id,
+        score: Number(scores[i])
+      }))
 
       const total = groups.reduce((sum, g) => sum + g.score, 0)
 

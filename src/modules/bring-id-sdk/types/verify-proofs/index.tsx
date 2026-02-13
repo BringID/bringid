@@ -4,6 +4,8 @@ import { ethers } from 'ethers'
 type TArgs = {
   proofs: TSemaphoreProof[]
   provider: ethers.JsonRpcProvider
+  context?: number
+  contract?: string
 }
 
 type TCredentialGroupScore = {
