@@ -1,5 +1,9 @@
 # BringID
 
+## 0.4.1-beta
+
+- Fixed iframe `url` query parameter to use `window.location.origin` instead of `window.location.href` to avoid leaking path and query string to the widget
+
 ## 0.4.0-beta
 
 - **Breaking:** `BringID` constructor now requires `appId` — `new BringID({ appId: "1" })`

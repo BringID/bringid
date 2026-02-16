@@ -49,7 +49,7 @@ export const BringIDModal: React.FC<TProps> = ({
 
   const queryParams = createQueryString(
     {
-      url: encodeURIComponent(window.location.href),
+      url: encodeURIComponent(window.location.origin),
       address,
       theme,
       highlightColor: highlightColor ? encodeURIComponent(highlightColor) : undefined,
