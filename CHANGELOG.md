@@ -1,5 +1,9 @@
 # BringID
 
+## 0.4.3-beta
+
+- Some minor UI fixes
+
 ## 0.4.2-beta
 
 - Cleaned up console logging: success logs no longer expose data, only confirm method completion

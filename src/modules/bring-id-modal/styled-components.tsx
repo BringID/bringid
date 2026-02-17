@@ -25,6 +25,7 @@ export const IFrame = styled.iframe`
   height: 550px;
   border: none;
   overflow: auto;
+  display: block;
 `
 
 export const LoadingScreen = styled.div`
