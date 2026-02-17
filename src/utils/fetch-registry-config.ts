@@ -13,12 +13,14 @@
       const configs = await api<TRegistryConfig>(
         `https://raw.githubusercontent.com/BringID/configs/main/${configsFileName}.json`
       )
-      return {
+      const result = {
         REGISTRY: configs.REGISTRY,
         CHAIN_ID: configs.CHAIN_ID
       }
+      console.log('[BringID] Registry config fetched successfully:', result)
+      return result
     } catch (err) {
-      console.error(err)
+      console.error('[BringID] Failed to fetch registry config:', err)
       return null
     }
     

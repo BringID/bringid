@@ -108,13 +108,15 @@ export class BringID {
 
   /** PUBLIC METHODS */
   verifyHumanity: TVerifyHumanity = async (payload = {}) => {
-    return this.sendRequest<{ proofs: TSemaphoreProof[], points: number }>("PROOFS_REQUEST", {
+    const result = await this.sendRequest<{ proofs: TSemaphoreProof[], points: number }>("PROOFS_REQUEST", {
       minPoints: 0,
       context: 0,
       ...payload,
       mode: this.mode,
       appId: this.appId
     });
+    console.log('[BringID] verifyHumanity completed successfully')
+    return result
   }
 
   getAddressScore: TGetAddressScore = async (
@@ -123,16 +125,22 @@ export class BringID {
     if (!address) {
       throw new Error('`address` argument is required to get address score')
     }
-    const {
-      score,
-      message,
-      signature
-    } = await api.getScore(address)
+    try {
+      const {
+        score,
+        message,
+        signature
+      } = await api.getScore(address)
 
-    return {
-      score,
-      message,
-      signature
+      console.log('[BringID] getAddressScore completed successfully')
+      return {
+        score,
+        message,
+        signature
+      }
+    } catch (err) {
+      console.error('[BringID] getAddressScore failed:', err)
+      throw err
     }
   }
 
@@ -201,6 +209,7 @@ export class BringID {
 
       const total = groups.reduce((sum, g) => sum + g.score, 0)
 
+      console.log('[BringID] verifyProofs completed successfully')
       return {
         verified: true,
         score: {
@@ -209,7 +218,7 @@ export class BringID {
         }
       }
     } catch (err) {
-      console.error('[verifyProofs] error:', err)
+      console.error('[BringID] verifyProofs failed:', err)
       return failedResult
     }
   }
