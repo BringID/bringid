@@ -1,5 +1,13 @@
 # BringID
 
+## 0.4.2-beta
+
+- Cleaned up console logging: success logs no longer expose data, only confirm method completion
+- Added `[BringID]` prefix to all console messages for easier filtering
+- Added success logs for `verifyHumanity`, `getAddressScore`, and `verifyProofs` methods
+- Added error logging to all catch blocks (`getAddressScore`, `fetchRegistryConfig`, `defineApiUrl`)
+- Registry config data is still logged on successful fetch for debugging purposes
+
 ## 0.4.1-beta
 
 - Fixed iframe `url` query parameter to use `window.location.origin` instead of `window.location.href` to avoid leaking path and query string to the widget
