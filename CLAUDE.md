@@ -45,7 +45,6 @@ The SDK is split into two entry points:
 │         Services                        │
 │  API Layer (api/)                       │
 │  Utils (utils/)                         │
-│  Helpers (helpers/)                     │
 └──────────────┬──────────────────────────┘
                │
 ┌──────────────▼──────────────────────────┐
@@ -59,7 +58,7 @@ The SDK is split into two entry points:
 
 ### Key Components
 
-1. **BringID Class** (`src/modules/bring-id-sdk/index.ts`): Main SDK class providing `getAddressScore()`, `verifyHumanity()`, and `verifyProofs()` methods. Requires `appId` at construction. Communicates with the modal via `window.postMessage`. Provides `setMode()`, `setAppId()`, and `getAppId()` for runtime configuration.
+1. **BringID Class** (`src/modules/bring-id-sdk/index.ts`): Main SDK class providing `getAddressScore()`, `verifyHumanity()`, and `verifyProofs()` methods. Requires `appId` at construction. Communicates with the modal via `window.postMessage`. Provides `setMode()`, `setAppId()`, `getAppId()`, and `getMode()` for runtime configuration.
 
 2. **BringIDModal Component** (`src/modules/bring-id-modal/index.tsx`): React component that renders an iframe pointing to the BringID widget (`widget.bringid.org`). Handles message proxying between the SDK and the widget iframe. Mode and appId are passed from the SDK to the widget automatically via postMessage.
 
@@ -70,7 +69,7 @@ The SDK is split into two entry points:
    - `fetch-registry-config.ts`: Fetches on-chain registry config (contract address, chain ID) from GitHub
    - `validate-outbound-message.ts` / `validate-inbound-message.ts`: Message validation for postMessage communication
    - `create-query-string.tsx`: Query string builder for iframe URL
-   - `define-api-url.tsx`: API URL resolver
+   - `api.tsx`: HTTP fetch wrapper used by the API layer
 
 5. **Hooks** (`src/hooks/`):
    - `use-message-proxy.tsx`: React hook that bridges postMessage between the SDK and the widget iframe
@@ -142,6 +141,7 @@ const bringid = new BringID({ appId: "1", mode: "dev" });
 - `setMode(mode)` — Switch between `"production"` and `"dev"`
 - `setAppId(appId)` — Update the app ID
 - `getAppId()` — Get the current app ID
+- `getMode()` — Get the current mode
 
 ---
 
@@ -424,10 +424,8 @@ src/
 │   ├── index.tsx                     # API URL
 │   └── allowed-connect-domains.tsx  # Whitelisted widget domains
 ├── errors/                           # Custom error classes
-├── helpers/                          # HTTP request helper, error text
 ├── hooks/                            # React hooks (useMessageProxy)
 ├── themes/                           # Styled-components themes
-├── texts/                            # Error text constants
 ├── types/                            # Shared TypeScript types
 └── utils/                            # Utility functions
 ```
