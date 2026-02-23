@@ -45,7 +45,7 @@ function useMessageProxy(
 
       // From WIDGET iframe → forward to CURRENT SDK
       if (fromOrigin === widgetOrigin) {
-
+    console.log('Widget message:', JSON.stringify(data, null, 2)) // add this
         // Validate inbound message structure
         if (!isValidInboundMessage(data)) {
           console.error('Invalid inbound message structure from widget')

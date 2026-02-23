@@ -75,7 +75,7 @@ The SDK is split into two entry points:
    - `use-message-proxy.tsx`: React hook that bridges postMessage between the SDK and the widget iframe
 
 6. **ABI** (`src/abi/`):
-   - `registry.tsx`: Registry contract ABI (`verifyProof`, `verifyProofs`, `getScore`, `apps`)
+   - `registry.tsx`: Registry contract ABI (`verifyProof`, `verifyProofs`, `getScore`, `apps`). As of v3, `appId` is the first parameter in all proof functions, and the `CredentialProof` struct includes `registry` (address) and `chainId` fields.
    - `scorer.tsx`: Scorer contract ABI (`getScore`, `getScores`)
 
 7. **Errors** (`src/errors/`): Custom error classes — `ValidationError`, `ConflictError`, `ForbiddenError`, `UnauthorizedError`
@@ -223,6 +223,7 @@ const { proofs, points } = await bringid.verifyHumanity({ minPoints: 10 });
 {
   credential_group_id: string
   app_id: string
+  chain_id: string
   semaphore_proof: {
     merkle_tree_depth: number
     merkle_tree_root: string
@@ -341,6 +342,7 @@ import { BringIDModal } from "bringid/react";
 type TSemaphoreProof = {
   credential_group_id: string;
   app_id: string;
+  chain_id: string;
   semaphore_proof: {
     merkle_tree_depth: number;
     merkle_tree_root: string;
@@ -455,7 +457,7 @@ src/
 
 3. **PostMessage Communication**: The SDK and modal communicate via `window.postMessage`. A single pending request model is used (new requests reject any pending one).
 
-4. **On-chain Verification Only**: `verifyProofs()` requires an ethers `JsonRpcProvider`. It calls `registry.verifyProofs()` for proof validation and `scorer.getScores()` for per-group score lookup. The scorer address is fetched from the registry via `registry.apps(appId)`.
+4. **On-chain Verification Only**: `verifyProofs()` requires an ethers `JsonRpcProvider`. It calls `registry.verifyProofs(appId, context, proofs)` for proof validation (v3: `appId` is the first parameter) and `scorer.getScores()` for per-group score lookup. The scorer address is fetched from the registry via `registry.apps(appId)`. Each proof struct includes `registry` (contract address) and `chainId` sourced from the proof's `chain_id` field.
 
 5. **Config Fetching**: Registry config is fetched at runtime from the `BringID/configs` GitHub repository. This allows updating contract addresses without SDK updates.
 

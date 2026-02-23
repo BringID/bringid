@@ -30,6 +30,7 @@ function isValidSemaphoreProof(proof: unknown): boolean {
   const p = proof as Record<string, unknown>
 
   if (typeof p.credential_group_id !== 'string') return false
+  if (p.chain_id !== undefined && typeof p.chain_id !== 'string') return false
   if (typeof p.semaphore_proof !== 'object' || p.semaphore_proof === null) return false
 
   const sp = p.semaphore_proof as Record<string, unknown>

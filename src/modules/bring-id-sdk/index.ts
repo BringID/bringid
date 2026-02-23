@@ -185,17 +185,19 @@ export class BringID {
     )
 
     try {
-      const contextValue = context ?? 0
-      const fromAddress = contract ?? registryConfig.REGISTRY
+      const appData = await registry.apps(this.appId)
+      console.log('[BringID] app data:', appData)
 
-      const verified = await registry.verifyProofs.staticCall(contextValue, credentialGroupProofs, { from: fromAddress })
+      const contextValue = context ?? 0
+      const fromAddress = contract ?? ethers.ZeroAddress
+
+      const verified = await registry.verifyProofs.staticCall(this.appId, contextValue, credentialGroupProofs, { from: fromAddress })
 
       if (!verified) {
         return failedResult
       }
 
       // Get scorer address for this app
-      const appData = await registry.apps(this.appId)
       const scorerAddress = appData.scorer
       // Fetch per-group scores from the scorer contract
       const scorer = new ethers.Contract(scorerAddress, SCORER_ABI, provider)

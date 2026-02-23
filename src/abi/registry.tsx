@@ -1,4 +1,4 @@
-const CREDENTIAL_GROUP_PROOF_COMPONENTS = [
+const CREDENTIAL_PROOF_COMPONENTS = [
   { internalType: 'uint256', name: 'credentialGroupId', type: 'uint256' },
   { internalType: 'uint256', name: 'appId', type: 'uint256' },
   {
@@ -19,10 +19,11 @@ const CREDENTIAL_GROUP_PROOF_COMPONENTS = [
 const REGISTRY_ABI = [
   {
     inputs: [
+      { internalType: 'uint256', name: 'appId', type: 'uint256' },
       { internalType: 'uint256', name: 'context_', type: 'uint256' },
       {
-        components: CREDENTIAL_GROUP_PROOF_COMPONENTS,
-        internalType: 'struct ICredentialRegistry.CredentialGroupProof',
+        components: CREDENTIAL_PROOF_COMPONENTS,
+        internalType: 'struct ICredentialRegistry.CredentialProof',
         name: 'proof_',
         type: 'tuple'
       }
@@ -34,10 +35,11 @@ const REGISTRY_ABI = [
   },
   {
     inputs: [
+      { internalType: 'uint256', name: 'appId', type: 'uint256' },
       { internalType: 'uint256', name: 'context_', type: 'uint256' },
       {
-        components: CREDENTIAL_GROUP_PROOF_COMPONENTS,
-        internalType: 'struct ICredentialRegistry.CredentialGroupProof[]',
+        components: CREDENTIAL_PROOF_COMPONENTS,
+        internalType: 'struct ICredentialRegistry.CredentialProof[]',
         name: 'proofs_',
         type: 'tuple[]'
       }
@@ -49,10 +51,11 @@ const REGISTRY_ABI = [
   },
   {
     inputs: [
+      { internalType: 'uint256', name: 'appId', type: 'uint256' },
       { internalType: 'uint256', name: 'context_', type: 'uint256' },
       {
-        components: CREDENTIAL_GROUP_PROOF_COMPONENTS,
-        internalType: 'struct ICredentialRegistry.CredentialGroupProof[]',
+        components: CREDENTIAL_PROOF_COMPONENTS,
+        internalType: 'struct ICredentialRegistry.CredentialProof[]',
         name: 'proofs_',
         type: 'tuple[]'
       }
