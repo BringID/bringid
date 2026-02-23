@@ -218,7 +218,7 @@ const { proofs, points } = await bringid.verifyHumanity({
 
 **Returns:**
 
-- `proofs` — Array of Semaphore proofs
+- `proofs` — Array of Semaphore proofs. Each proof includes `credential_group_id`, `app_id`, `chain_id`, and `semaphore_proof`.
 - `points` — Humanity points earned
 
 ### `bringid.destroy()`
@@ -311,6 +311,10 @@ export function VerifyButton() {
 **Score returns undefined**
 
 - Verify the address format is correct (checksummed)
+
+**`verifyProofs` returns `verified: false` after upgrading**
+
+- Apps and user credentials must be re-registered on the v3 registry contract. Previous registrations are not compatible with the new contract.
 
 ## License
 

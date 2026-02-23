@@ -1,5 +1,15 @@
 # BringID
 
+## 0.5.1-beta
+
+- **Breaking:** Registry ABI updated to V3 — `verifyProof`, `verifyProofs`, and `getScore` now take `appId` as the first parameter
+- **Breaking:** `CredentialGroupProof` struct renamed to `CredentialProof` in the registry ABI
+- `TSemaphoreProof` type now includes an optional `chain_id` field
+- `verifyProofs` now uses `ethers.ZeroAddress` as the default `from` address instead of the registry address
+- Fixed iframe URL query param to use `window.location.origin` instead of `window.location.href`
+- Fixed iframe `display: block` to prevent inline rendering issues
+- Removed unused internal helpers and utilities
+
 ## 0.4.3-beta
 
 - Some minor UI fixes
