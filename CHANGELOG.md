@@ -1,5 +1,9 @@
 # BringID
 
+## 0.5.2-beta
+
+- Removed staging configs
+
 ## 0.5.1-beta
 
 - **Breaking:** Registry ABI updated to V3 — `verifyProof`, `verifyProofs`, and `getScore` now take `appId` as the first parameter
