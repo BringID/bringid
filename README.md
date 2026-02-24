@@ -13,7 +13,7 @@ npm install bringid
 ```ts
 import { BringID } from "bringid";
 
-const bringid = new BringID({ appId: "1" });
+const bringid = new BringID({ appId: "0x..." });
 
 // Get a reputation score (0-100) — works immediately
 const { score } = await bringid.getAddressScore("0x...");
@@ -45,13 +45,13 @@ const { verified, score } = await bringid.verifyProofs({ proofs, provider });
 
 ### 1. Create the SDK instance
 
-Create a shared instance to use across your app. The `appId` parameter is required.
+Create a shared instance to use across your app. The `appId` parameter is required. Please, use https://manager.bringid.org/ to create appId for your application
 
 ```ts
 // lib/bringid.ts
 import { BringID } from "bringid";
 
-export const bringid = new BringID({ appId: "1" });
+export const bringid = new BringID({ appId: "0x..." });
 ```
 
 ### 2. Add the Modal Provider
@@ -117,10 +117,10 @@ Creates a new SDK instance. The `appId` is required.
 import { BringID } from "bringid";
 
 // Production mode (default)
-const bringid = new BringID({ appId: "1" });
+const bringid = new BringID({ appId: "0x..." });
 
 // Development mode
-const bringid = new BringID({ appId: "1", mode: "dev" });
+const bringid = new BringID({ appId: "0x...", mode: "dev" });
 ```
 
 **Options:**
@@ -163,7 +163,7 @@ const { verified, score } = await bringid.verifyProofs({
   proofs,
   provider,
   context: 1,
-  contract: "0x..."
+  contract: "0x...",
 });
 ```
 
@@ -244,9 +244,9 @@ import { BringIDModal } from "bringid/react";
   customTitles={{
     pointsTitle: "Humanity Points",
     pointsShortTitle: "HP",
-    scoreTitle: "Score"
+    scoreTitle: "Score",
   }}
-/>
+/>;
 ```
 
 **Props:**
@@ -266,7 +266,7 @@ import { BringIDModal } from "bringid/react";
 Set `mode: "dev"` on the BringID instance. The mode is automatically passed to the modal via postMessage — no need to set it on `BringIDModal`.
 
 ```ts
-const bringid = new BringID({ appId: "1", mode: "dev" });
+const bringid = new BringID({ appId: "0x...", mode: "dev" });
 ```
 
 > **Note:** Production mode is enabled by default. Only use `dev` mode during development.
