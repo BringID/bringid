@@ -1,5 +1,13 @@
 # BringID
 
+## 0.5.3-beta
+
+- Added `redirectUrl` constructor option — passed URL-encoded to the widget via postMessage for OAuth/mini-app redirect flows
+- Added mini-app detection: `isInMiniApp()` checks whether the SDK is running inside a mini-app (cached after first call) and passes `isMiniApp` flag to the widget on each `verifyHumanity` call
+- `useMessageProxy` now handles `OPEN_EXTERNAL_URL` messages from the widget: uses `sdk.actions.openUrl` inside mini-apps, falls back to `window.open` otherwise
+- `verifyHumanity` reads `bringid_signature` and `bringid_message` from the current page's URL query string and forwards them as `verificationSignature` / `verificationMessage` to the widget
+- Added `@farcaster/miniapp-sdk` as a dependency
+
 ## 0.5.2-beta
 
 - Removed staging configs

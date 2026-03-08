@@ -109,7 +109,7 @@ export default function RootLayout({
 
 ## API
 
-### `new BringID({ appId, mode? })`
+### `new BringID({ appId, mode?, redirectUrl? })`
 
 Creates a new SDK instance. The `appId` is required.
 
@@ -121,18 +121,23 @@ const bringid = new BringID({ appId: "0x..." });
 
 // Development mode
 const bringid = new BringID({ appId: "0x...", mode: "dev" });
+
+// With redirect URL (for mini-app / OAuth redirect flows)
+const bringid = new BringID({ appId: "0x...", redirectUrl: "https://yourapp.com/callback" });
 ```
 
 **Options:**
 
 - `appId` (string, required) — Your application ID
 - `mode` (`"production"` | `"dev"`, optional) — Defaults to `"production"`. Dev mode uses staging APIs and Sepolia testnet configs.
+- `redirectUrl` (string, optional) — URL passed to the widget for OAuth/mini-app redirect flows. URL-encoded before forwarding.
 
 **Instance methods:**
 
 - `setMode(mode)` — Switch between `"production"` and `"dev"`
 - `setAppId(appId)` — Update the app ID
 - `getAppId()` — Get the current app ID
+- `getMode()` — Get the current mode
 
 ### `bringid.getAddressScore(address)`
 
