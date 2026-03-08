@@ -70,9 +70,10 @@ The SDK is split into two entry points:
    - `validate-outbound-message.ts` / `validate-inbound-message.ts`: Message validation for postMessage communication
    - `create-query-string.tsx`: Query string builder for iframe URL
    - `api.tsx`: HTTP fetch wrapper used by the API layer
+   - `define-if-miniapp.ts`: Detects whether the SDK is running inside a mini-app via `@farcaster/miniapp-sdk`. Result is cached after the first call.
 
 5. **Hooks** (`src/hooks/`):
-   - `use-message-proxy.tsx`: React hook that bridges postMessage between the SDK and the widget iframe
+   - `use-message-proxy.tsx`: React hook that bridges postMessage between the SDK and the widget iframe. Also handles `OPEN_EXTERNAL_URL` messages from the widget: uses `sdk.actions.openUrl` when running inside a mini-app, falls back to `window.open` otherwise.
 
 6. **ABI** (`src/abi/`):
    - `registry.tsx`: Registry contract ABI (`verifyProof`, `verifyProofs`, `getScore`, `apps`). As of v3, `appId` is the first parameter in all proof functions, and the `CredentialProof` struct includes `registry` (address) and `chainId` fields.
@@ -106,7 +107,7 @@ The SDK is split into two entry points:
 
 1. Host app creates a `BringID` instance with `appId` and mounts `BringIDModal`
 2. `BringIDModal` renders an iframe pointing to `widget.bringid.org`
-3. When `verifyHumanity()` is called, SDK sends a `PROOFS_REQUEST` message via `window.postMessage` (includes `mode` and `appId`)
+3. When `verifyHumanity()` is called, SDK sends a `PROOFS_REQUEST` message via `window.postMessage` (includes `mode`, `appId`, `isMiniApp`, and optionally `redirectUrl`, `verificationSignature`, `verificationMessage`)
 4. The `useMessageProxy` hook forwards the message to the iframe
 5. The widget handles user interaction (OAuth, signing, proof generation)
 6. The widget sends proofs back via postMessage
@@ -117,7 +118,7 @@ The SDK is split into two entry points:
 
 ## API
 
-### `new BringID({ appId, mode? })`
+### `new BringID({ appId, mode?, redirectUrl? })`
 
 Creates a new SDK instance. The `appId` is required.
 
@@ -129,12 +130,16 @@ const bringid = new BringID({ appId: "1" });
 
 // Development mode
 const bringid = new BringID({ appId: "1", mode: "dev" });
+
+// With redirect URL (for mini-app / OAuth redirect flows)
+const bringid = new BringID({ appId: "1", redirectUrl: "https://yourapp.com/callback" });
 ```
 
 **Options:**
 
 - `appId` (string, required) — Your application ID
 - `mode` (`"production"` | `"dev"`, optional) — Defaults to `"production"`. Dev mode uses staging APIs and Sepolia testnet configs.
+- `redirectUrl` (string, optional) — URL passed to the widget for OAuth/mini-app redirect flows. URL-encoded before forwarding.
 
 **Instance methods:**
 
@@ -468,3 +473,5 @@ src/
 8. **Cleanup**: Always call `bringid.destroy()` when unmounting to clean up event listeners and reject pending requests.
 
 9. **Mode Propagation**: The `mode` is set only on the `BringID` instance and automatically passed to the widget via postMessage. There is no `mode` prop on `BringIDModal`.
+
+10. **Mini-App Support**: When `verifyHumanity()` is called, the SDK detects if it is running inside a mini-app (`isInMiniApp()`) and passes the result as `isMiniApp` to the widget. If a `redirectUrl` was provided at construction time, it is URL-encoded and forwarded to the widget. Any `bringid_signature` / `bringid_message` query params present in the current page URL are also forwarded as `verificationSignature` / `verificationMessage`. The `useMessageProxy` hook handles `OPEN_EXTERNAL_URL` messages from the widget by calling `sdk.actions.openUrl` inside mini-apps or `window.open` otherwise.

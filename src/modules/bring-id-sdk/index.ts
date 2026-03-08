@@ -14,6 +14,7 @@ import {
   TConstructorArgs
 } from "./types"
 import api from "@/api"
+import { isInMiniApp } from "@/utils"
 import { REGISTRY_ABI, SCORER_ABI } from "@/abi"
 import { ethers } from 'ethers'
 
@@ -22,6 +23,7 @@ export class BringID {
   private isDestroyed = false
   private appId: string
   private mode: TMode = 'production'
+  private redirectUrl: string | null = null
 
   private pendingRequest: {
     resolve: (v: any) => void,
@@ -38,6 +40,10 @@ export class BringID {
 
     if (args.mode) {
       this.mode = args.mode
+    }
+
+    if (args.redirectUrl) {
+      this.redirectUrl = args.redirectUrl
     }
   }
 
@@ -108,12 +114,30 @@ export class BringID {
 
   /** PUBLIC METHODS */
   verifyHumanity: TVerifyHumanity = async (payload = {}) => {
+    const params = new URLSearchParams(window.location.search)
+    console.log('[verifyHumanity] full query string:', window.location.search)
+    console.log('[verifyHumanity] all params:', Object.fromEntries(params.entries()))
+    const rawSig = params.get('bringid_signature')
+    const rawMsg = params.get('bringid_message')
+    console.log('[verifyHumanity] bringid_signature:', rawSig ?? 'not found')
+    console.log('[verifyHumanity] bringid_message:', rawMsg ?? 'not found')
+    const miniapp = await isInMiniApp()
+    console.log('[verifyHumanity] isInMiniApp:', miniapp)
+
     const result = await this.sendRequest<{ proofs: TSemaphoreProof[], points: number }>("PROOFS_REQUEST", {
       minPoints: 0,
       context: 0,
       ...payload,
       mode: this.mode,
-      appId: this.appId
+      appId: this.appId,
+      isMiniApp: miniapp,
+      ...(this.redirectUrl && {
+        redirectUrl: encodeURIComponent(this.redirectUrl)
+      }),
+      ...(rawSig && rawMsg && {
+        verificationSignature: encodeURIComponent(rawSig),
+        verificationMessage: encodeURIComponent(rawMsg)
+      })
     });
     console.log('[BringID] verifyHumanity completed successfully')
     return result

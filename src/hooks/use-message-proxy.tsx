@@ -1,6 +1,7 @@
 import { useEffect } from "react"
 import { TGenerateSignature, TInboundMessage } from "@/types"
-import { isValidInboundMessage, isValidOutboundMessage } from "@/utils"
+import { isValidInboundMessage, isValidOutboundMessage, isInMiniApp } from "@/utils"
+import { sdk } from "@farcaster/miniapp-sdk"
 
 function useMessageProxy(
   isReady: boolean,
@@ -14,7 +15,7 @@ function useMessageProxy(
     if (typeof window === "undefined") return
 
     const widgetOrigin = new URL(connectUrl).origin
-  
+
     async function onMessage(event: MessageEvent) {
       const fromOrigin = event.origin;
       const data = event.data;
@@ -45,7 +46,18 @@ function useMessageProxy(
 
       // From WIDGET iframe → forward to CURRENT SDK
       if (fromOrigin === widgetOrigin) {
-    console.log('Widget message:', JSON.stringify(data, null, 2)) // add this
+        console.log('Widget message:', JSON.stringify(data, null, 2))
+
+        if (data?.type === 'OPEN_EXTERNAL_URL' && data?.payload?.url) {
+          const url = data.payload.url
+          if (await isInMiniApp()) {
+            sdk.actions.openUrl(url)
+          } else {
+            window.open(url, '_blank')
+          }
+          return
+        }
+
         // Validate inbound message structure
         if (!isValidInboundMessage(data)) {
           console.error('Invalid inbound message structure from widget')
