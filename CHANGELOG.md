@@ -1,6 +1,6 @@
 # BringID
 
-## 0.5.4-beta
+## 0.6.0-beta
 
 - **Breaking:** `BringID` constructor `mode` option replaced by `chainId` — use `chainId: 8453` for production (Base mainnet) or `chainId: 84532` for dev (Base Sepolia). Throws if an unsupported chain ID is provided.
 - Removed debug `console.log` statements from `verifyHumanity` and `useMessageProxy`
