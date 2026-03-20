@@ -118,18 +118,21 @@ The SDK is split into two entry points:
 
 ## API
 
-### `new BringID({ appId, mode?, redirectUrl? })`
+### `new BringID({ appId, chainId?, redirectUrl? })`
 
 Creates a new SDK instance. The `appId` is required.
 
 ```ts
 import { BringID } from "bringid";
 
-// Production mode (default)
+// Production mode (default, Base mainnet)
 const bringid = new BringID({ appId: "1" });
 
-// Development mode
-const bringid = new BringID({ appId: "1", mode: "dev" });
+// Explicitly set chain (Base mainnet)
+const bringid = new BringID({ appId: "1", chainId: 8453 });
+
+// Development mode (Base Sepolia)
+const bringid = new BringID({ appId: "1", chainId: 84532 });
 
 // With redirect URL (for mini-app / OAuth redirect flows)
 const bringid = new BringID({ appId: "1", redirectUrl: "https://yourapp.com/callback" });
@@ -138,7 +141,7 @@ const bringid = new BringID({ appId: "1", redirectUrl: "https://yourapp.com/call
 **Options:**
 
 - `appId` (string, required) — Your application ID
-- `mode` (`"production"` | `"dev"`, optional) — Defaults to `"production"`. Dev mode uses staging APIs and Sepolia testnet configs.
+- `chainId` (`8453` | `84532`, optional) — Chain ID to use. `8453` (Base) uses production mode, `84532` (Base Sepolia) uses dev mode. Defaults to production if omitted. Throws if an unsupported chain ID is provided.
 - `redirectUrl` (string, optional) — URL passed to the widget for OAuth/mini-app redirect flows. URL-encoded before forwarding.
 
 **Instance methods:**
@@ -390,12 +393,14 @@ type TVerifyProofsResult = {
 
 ### Development vs Production Mode
 
-| Aspect          | Production (default)         | Dev                                |
+Determined by `chainId` passed to the constructor. `8453` (Base mainnet) → production. `84532` (Base Sepolia) → dev. Defaults to production if omitted.
+
+| Aspect          | Production (`chainId: 8453`) | Dev (`chainId: 84532`)             |
 | --------------- | ---------------------------- | ---------------------------------- |
 | API endpoint    | `https://api.bringid.org`    | `https://api.bringid.org`          |
 | Widget URL      | `https://widget.bringid.org` | `https://dev.widget.bringid.org`   |
 | Registry config | `configs.json`               | `dev-configs-staging.json`         |
-| Chain           | Mainnet                      | Sepolia                            |
+| Chain           | Base mainnet                 | Base Sepolia                       |
 
 ### Environment Variables
 
@@ -472,6 +477,6 @@ src/
 
 8. **Cleanup**: Always call `bringid.destroy()` when unmounting to clean up event listeners and reject pending requests.
 
-9. **Mode Propagation**: The `mode` is set only on the `BringID` instance and automatically passed to the widget via postMessage. There is no `mode` prop on `BringIDModal`.
+9. **Mode Propagation**: The `mode` is derived from `chainId` at construction time and stored on the `BringID` instance. It is automatically passed to the widget via postMessage. There is no `mode` prop on `BringIDModal`.
 
 10. **Mini-App Support**: When `verifyHumanity()` is called, the SDK detects if it is running inside a mini-app (`isInMiniApp()`) and passes the result as `isMiniApp` to the widget. If a `redirectUrl` was provided at construction time, it is URL-encoded and forwarded to the widget. Any `bringid_signature` / `bringid_message` query params present in the current page URL are also forwarded as `verificationSignature` / `verificationMessage`. The `useMessageProxy` hook handles `OPEN_EXTERNAL_URL` messages from the widget by calling `sdk.actions.openUrl` inside mini-apps or `window.open` otherwise.

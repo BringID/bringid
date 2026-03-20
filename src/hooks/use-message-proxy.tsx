@@ -46,8 +46,6 @@ function useMessageProxy(
 
       // From WIDGET iframe → forward to CURRENT SDK
       if (fromOrigin === widgetOrigin) {
-        console.log('Widget message:', JSON.stringify(data, null, 2))
-
         if (data?.type === 'OPEN_EXTERNAL_URL' && data?.payload?.url) {
           const url = data.payload.url
           if (await isInMiniApp()) {

@@ -109,18 +109,21 @@ export default function RootLayout({
 
 ## API
 
-### `new BringID({ appId, mode?, redirectUrl? })`
+### `new BringID({ appId, chainId?, redirectUrl? })`
 
 Creates a new SDK instance. The `appId` is required.
 
 ```ts
 import { BringID } from "bringid";
 
-// Production mode (default)
+// Production mode (default, Base mainnet)
 const bringid = new BringID({ appId: "0x..." });
 
-// Development mode
-const bringid = new BringID({ appId: "0x...", mode: "dev" });
+// Explicitly set chain (Base mainnet)
+const bringid = new BringID({ appId: "0x...", chainId: 8453 });
+
+// Development mode (Base Sepolia)
+const bringid = new BringID({ appId: "0x...", chainId: 84532 });
 
 // With redirect URL (for mini-app / OAuth redirect flows)
 const bringid = new BringID({ appId: "0x...", redirectUrl: "https://yourapp.com/callback" });
@@ -129,7 +132,7 @@ const bringid = new BringID({ appId: "0x...", redirectUrl: "https://yourapp.com/
 **Options:**
 
 - `appId` (string, required) — Your application ID
-- `mode` (`"production"` | `"dev"`, optional) — Defaults to `"production"`. Dev mode uses staging APIs and Sepolia testnet configs.
+- `chainId` (`8453` | `84532`, optional) — Chain ID to use. `8453` (Base) uses production mode, `84532` (Base Sepolia) uses dev mode. Defaults to production if omitted. Throws if an unsupported chain ID is provided.
 - `redirectUrl` (string, optional) — URL passed to the widget for OAuth/mini-app redirect flows. URL-encoded before forwarding.
 
 **Instance methods:**
@@ -268,13 +271,13 @@ import { BringIDModal } from "bringid/react";
 
 ### Development Mode
 
-Set `mode: "dev"` on the BringID instance. The mode is automatically passed to the modal via postMessage — no need to set it on `BringIDModal`.
+Pass `chainId: 84532` (Base Sepolia) to use dev mode. The mode is automatically passed to the modal via postMessage — no need to set it on `BringIDModal`.
 
 ```ts
-const bringid = new BringID({ appId: "0x...", mode: "dev" });
+const bringid = new BringID({ appId: "0x...", chainId: 84532 });
 ```
 
-> **Note:** Production mode is enabled by default. Only use `dev` mode during development.
+> **Note:** Production mode (Base mainnet, chainId 8453) is enabled by default. Only use Base Sepolia during development.
 
 ## Example
 

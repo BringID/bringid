@@ -38,8 +38,12 @@ export class BringID {
       this.dialogWindowOrigin = window.location.origin
     }
 
-    if (args.mode) {
-      this.mode = args.mode
+    if (args.chainId === 84532) {
+      this.mode = 'dev'
+    } else if (args.chainId === 8453 || args.chainId === undefined) {
+      this.mode = 'production'
+    } else {
+      throw new Error(`Unsupported chainId: ${args.chainId}. Use 8453 (Base) or 84532 (Base Sepolia).`)
     }
 
     if (args.redirectUrl) {
@@ -115,14 +119,9 @@ export class BringID {
   /** PUBLIC METHODS */
   verifyHumanity: TVerifyHumanity = async (payload = {}) => {
     const params = new URLSearchParams(window.location.search)
-    console.log('[verifyHumanity] full query string:', window.location.search)
-    console.log('[verifyHumanity] all params:', Object.fromEntries(params.entries()))
     const rawSig = params.get('bringid_signature')
     const rawMsg = params.get('bringid_message')
-    console.log('[verifyHumanity] bringid_signature:', rawSig ?? 'not found')
-    console.log('[verifyHumanity] bringid_message:', rawMsg ?? 'not found')
     const miniapp = await isInMiniApp()
-    console.log('[verifyHumanity] isInMiniApp:', miniapp)
 
     const result = await this.sendRequest<{ proofs: TSemaphoreProof[], points: number }>("PROOFS_REQUEST", {
       minPoints: 0,
@@ -210,7 +209,6 @@ export class BringID {
 
     try {
       const appData = await registry.apps(this.appId)
-      console.log('[BringID] app data:', appData)
 
       const contextValue = context ?? 0
       const fromAddress = contract ?? ethers.ZeroAddress
