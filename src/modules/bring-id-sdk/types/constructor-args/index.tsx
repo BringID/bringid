@@ -1,8 +1,6 @@
-import { TMode } from "@/types"
-
 type TConstructorArgs = {
   appId: string
-  mode?: TMode
+  chainId?: number
   redirectUrl?: string
 }
 
